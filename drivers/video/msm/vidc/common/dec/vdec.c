@@ -2102,7 +2102,6 @@ static int vid_dec_open(struct inode *inode, struct file *file)
 		mutex_unlock(&vid_dec_device_p->lock);
 		return -ENOMEM;
 	}
-
 	file->private_data = client_ctx;
 	mutex_unlock(&vid_dec_device_p->lock);
 	return rc;

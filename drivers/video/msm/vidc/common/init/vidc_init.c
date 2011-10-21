@@ -640,6 +640,9 @@ ion_error:
 bail_out_add:
 	mutex_unlock(&client_ctx->enrty_queue_lock);
 	return false;
+	if (buff_ion_handle)
+		ion_free(client_ctx->user_ion_client, buff_ion_handle);
+	return false;
 }
 EXPORT_SYMBOL(vidc_insert_addr_table);
 
