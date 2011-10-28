@@ -606,6 +606,18 @@ u32 vidc_insert_addr_table(struct video_client_ctx *client_ctx,
 			mapped_buffer;
 		buf_addr_table[*num_of_buffers].dev_addr =
 			mapped_buffer->iova[0];
+		flags = MSM_SUBSYSTEM_MAP_IOVA;
+		mapped_buffer = msm_subsystem_map_buffer(phys_addr, length,
+		flags, vidc_mmu_subsystem,
+		sizeof(vidc_mmu_subsystem)/sizeof(unsigned int));
+		if (IS_ERR(mapped_buffer)) {
+			pr_err("buffer map failed");
+			return false;
+		}
+		buf_addr_table[*num_of_buffers].client_data = (void *)
+			mapped_buffer;
+		buf_addr_table[*num_of_buffers].dev_addr =
+			mapped_buffer->iova[0];
 		buf_addr_table[*num_of_buffers].user_vaddr = user_vaddr;
 		buf_addr_table[*num_of_buffers].kernel_vaddr = *kernel_vaddr;
 		buf_addr_table[*num_of_buffers].pmem_fd = pmem_fd;

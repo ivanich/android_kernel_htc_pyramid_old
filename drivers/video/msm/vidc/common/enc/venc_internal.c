@@ -1835,7 +1835,6 @@ u32 vid_enc_set_recon_buffers(struct video_client_ctx *client_ctx,
 	}
 	control->client_data = (void *) mapped_buffer;
 	control->dev_addr = (u8 *)mapped_buffer->iova[0];
-
 	vcd_property_hdr.prop_id = VCD_I_RECON_BUFFERS;
 	vcd_property_hdr.sz =
 		sizeof(struct vcd_property_enc_recon_buffer);
