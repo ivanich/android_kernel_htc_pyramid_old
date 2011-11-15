@@ -606,7 +606,6 @@ u32 vidc_insert_addr_table(struct video_client_ctx *client_ctx,
 			mapped_buffer;
 		buf_addr_table[*num_of_buffers].dev_addr =
 			mapped_buffer->iova[0];
-		flags = MSM_SUBSYSTEM_MAP_IOVA;
 		mapped_buffer = msm_subsystem_map_buffer(phys_addr, length,
 		flags, vidc_mmu_subsystem,
 		sizeof(vidc_mmu_subsystem)/sizeof(unsigned int));
