@@ -54,7 +54,6 @@
 						struct msmfb_mixer_info_req)
 #define MSMFB_OVERLAY_PLAY_WAIT _IOWR(MSMFB_IOCTL_MAGIC, 149, \
 						struct msmfb_overlay_data)
-
 #define MSMFB_WRITEBACK_INIT _IO(MSMFB_IOCTL_MAGIC, 150)
 
 /* The QCT latest code base is used, adding on 2/9/2012 */
