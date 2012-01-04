@@ -611,7 +611,6 @@ u32 vidc_insert_addr_table(struct video_client_ctx *client_ctx,
 		sizeof(vidc_mmu_subsystem)/sizeof(unsigned int));
 		if (IS_ERR(mapped_buffer)) {
 			pr_err("buffer map failed");
-			return false;
 		}
 		buf_addr_table[*num_of_buffers].client_data = (void *)
 			mapped_buffer;
@@ -635,11 +634,11 @@ ion_error:
 	if (*kernel_vaddr)
 		ion_unmap_kernel(client_ctx->user_ion_client, buff_ion_handle);
 	if (!IS_ERR_OR_NULL(buff_ion_handle))
+	if (buff_ion_handle)
 		ion_free(client_ctx->user_ion_client, buff_ion_handle);
 bail_out_add:
 	mutex_unlock(&client_ctx->enrty_queue_lock);
 	return false;
-	if (buff_ion_handle)
 		ion_free(client_ctx->user_ion_client, buff_ion_handle);
 	return false;
 }
