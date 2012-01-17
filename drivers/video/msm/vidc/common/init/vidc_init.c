@@ -634,7 +634,6 @@ ion_error:
 	if (*kernel_vaddr)
 		ion_unmap_kernel(client_ctx->user_ion_client, buff_ion_handle);
 	if (!IS_ERR_OR_NULL(buff_ion_handle))
-	if (buff_ion_handle)
 		ion_free(client_ctx->user_ion_client, buff_ion_handle);
 bail_out_add:
 	mutex_unlock(&client_ctx->enrty_queue_lock);
