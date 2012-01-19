@@ -2102,7 +2102,6 @@ static int vid_dec_open(struct inode *inode, struct file *file)
 		mutex_unlock(&vid_dec_device_p->lock);
 		return -ENOMEM;
 	}
-	file->private_data = client_ctx;
 	mutex_unlock(&vid_dec_device_p->lock);
 	return rc;
 }
@@ -2121,7 +2120,6 @@ static int vid_dec_release_secure(struct inode *inode, struct file *file)
 	vidc_disable_clk();
 #endif
 	INFO("msm_vidc_dec: Return from %s()", __func__);
-	return 0;
 }
 
 static int vid_dec_release(struct inode *inode, struct file *file)

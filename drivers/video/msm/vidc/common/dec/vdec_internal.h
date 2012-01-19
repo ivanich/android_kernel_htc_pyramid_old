@@ -20,6 +20,8 @@
 
 #define NUM_OF_DRIVER_NODES 2
 
+#define NUM_OF_DRIVER_NODES 2
+
 struct vid_dec_msg {
 	struct list_head list;
 	struct vdec_msginfo vdec_msg_info;
