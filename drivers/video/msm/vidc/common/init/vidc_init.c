@@ -570,7 +570,6 @@ u32 vidc_insert_addr_table(struct video_client_ctx *client_ctx,
 						&ionflag)) {
 				ERR("%s():ION flags fail\n",
 				 __func__);
-				goto ion_error;
 			}
 			*kernel_vaddr = (unsigned long)
 				ion_map_kernel(
