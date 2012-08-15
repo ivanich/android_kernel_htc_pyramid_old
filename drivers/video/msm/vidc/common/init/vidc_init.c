@@ -570,6 +570,7 @@ u32 vidc_insert_addr_table(struct video_client_ctx *client_ctx,
 						&ionflag)) {
 				ERR("%s():ION flags fail\n",
 				 __func__);
+				goto ion_error;
 			}
 			*kernel_vaddr = (unsigned long)
 				ion_map_kernel(
@@ -605,16 +606,6 @@ u32 vidc_insert_addr_table(struct video_client_ctx *client_ctx,
 			mapped_buffer;
 		buf_addr_table[*num_of_buffers].dev_addr =
 			mapped_buffer->iova[0];
-		mapped_buffer = msm_subsystem_map_buffer(phys_addr, length,
-		flags, vidc_mmu_subsystem,
-		sizeof(vidc_mmu_subsystem)/sizeof(unsigned int));
-		if (IS_ERR(mapped_buffer)) {
-			pr_err("buffer map failed");
-		}
-		buf_addr_table[*num_of_buffers].client_data = (void *)
-			mapped_buffer;
-		buf_addr_table[*num_of_buffers].dev_addr =
-			mapped_buffer->iova[0];
 		buf_addr_table[*num_of_buffers].user_vaddr = user_vaddr;
 		buf_addr_table[*num_of_buffers].kernel_vaddr = *kernel_vaddr;
 		buf_addr_table[*num_of_buffers].pmem_fd = pmem_fd;
@@ -636,8 +627,6 @@ ion_error:
 		ion_free(client_ctx->user_ion_client, buff_ion_handle);
 bail_out_add:
 	mutex_unlock(&client_ctx->enrty_queue_lock);
-	return false;
-		ion_free(client_ctx->user_ion_client, buff_ion_handle);
 	return false;
 }
 EXPORT_SYMBOL(vidc_insert_addr_table);

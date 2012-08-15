@@ -517,7 +517,9 @@ static int vid_enc_open(struct inode *inode, struct file *file)
 
 	stop_cmd = 0;
 	client_count = vcd_get_num_of_clients();
+	if (client_count == VIDC_MAX_NUM_CLIENTS) {
 		ERR("ERROR : vid_enc_open() max number of clients"
+		    "limit reached\n");
 		mutex_unlock(&vid_enc_device_p->lock);
 		return -ENODEV;
 	}
