@@ -13,7 +13,7 @@
 #include <linux/memory_alloc.h>
 #include <mach/msm_subsystem_map.h>
 #include <asm/div64.h>
-#include "vidc_type.h"
+#include <media/msm/vidc_type.h>
 #include "vcd.h"
 #include "vdec_internal.h"
 
@@ -57,6 +57,7 @@ static int vcd_pmem_alloc(size_t sz, u8 **kernel_vaddr, u8 **phy_addr,
 		pr_err("%s() map table is full", __func__);
 		goto bailout;
 	}
+	res_trk_set_mem_type(DDL_MM_MEM);
 	memtype = res_trk_get_mem_type();
 	if (!cctxt->vcd_enable_ion) {
 		map_buffer->phy_addr = (phys_addr_t)
@@ -68,7 +69,7 @@ static int vcd_pmem_alloc(size_t sz, u8 **kernel_vaddr, u8 **phy_addr,
 	} else {
 		map_buffer->alloc_handle = ion_alloc(
 			    cctxt->vcd_ion_client, sz, SZ_4K,
-			    (1<<memtype));
+			    memtype);
 		if (!map_buffer->alloc_handle) {
 			pr_err("%s() ION alloc failed", __func__);
 			goto bailout;
@@ -1851,7 +1852,7 @@ u32 vcd_handle_input_done(
 		vcd_release_trans_tbl_entry(transc);
 
 	if (VCD_FAILED(status)) {
-		pr_info("INPUT_DONE returned err = 0x%x", status);
+		VCD_MSG_ERROR("INPUT_DONE returned err = 0x%x", status);
 		vcd_handle_input_done_failed(cctxt, transc);
 	} else
 		cctxt->status.mask |= VCD_FIRST_IP_DONE;
