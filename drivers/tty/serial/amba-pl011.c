@@ -1733,8 +1733,18 @@ pl011_console_write(struct console *co, const char *s, unsigned int count)
 {
 	struct uart_amba_port *uap = amba_ports[co->index];
 	unsigned int status, old_cr, new_cr;
+	unsigned long flags;
+	int locked = 1;
 
 	clk_enable(uap->clk);
+
+	local_irq_save(flags);
+	if (uap->port.sysrq)
+		locked = 0;
+	else if (oops_in_progress)
+		locked = spin_trylock(&uap->port.lock);
+	else
+		spin_lock(&uap->port.lock);
 
 	/*
 	 *	First save the CR then disable the interrupts
@@ -1754,6 +1764,10 @@ pl011_console_write(struct console *co, const char *s, unsigned int count)
 		status = readw(uap->port.membase + UART01x_FR);
 	} while (status & UART01x_FR_BUSY);
 	writew(old_cr, uap->port.membase + UART011_CR);
+
+	if (locked)
+		spin_unlock(&uap->port.lock);
+	local_irq_restore(flags);
 
 	clk_disable(uap->clk);
 }
@@ -1889,6 +1903,10 @@ static int pl011_probe(struct amba_device *dev, const struct amba_id *id)
 		ret = PTR_ERR(uap->clk);
 		goto unmap;
 	}
+
+	/* Ensure interrupts from this UART are masked and cleared */
+	writew(0, uap->port.membase + UART011_IMSC);
+	writew(0xffff, uap->port.membase + UART011_ICR);
 
 	uap->vendor = vendor;
 	uap->lcrh_rx = vendor->lcrh_rx;
