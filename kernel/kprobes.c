@@ -1324,10 +1324,8 @@ int __kprobes register_kprobe(struct kprobe *p)
 	if (!kernel_text_address((unsigned long) p->addr) ||
 	    in_kprobes_functions((unsigned long) p->addr) ||
 	    ftrace_text_reserved(p->addr, p->addr) ||
-	    jump_label_text_reserved(p->addr, p->addr)) {
-		ret = -EINVAL;
-		goto cannot_probe;
-	}
+	    jump_label_text_reserved(p->addr, p->addr))
+		goto fail_with_jump_label;
 
 	/* User can pass only KPROBE_FLAG_DISABLED to register_kprobe */
 	p->flags &= KPROBE_FLAG_DISABLED;
@@ -1342,7 +1340,7 @@ int __kprobes register_kprobe(struct kprobe *p)
 		 * its code to prohibit unexpected unloading.
 		 */
 		if (unlikely(!try_module_get(probed_mod)))
-			goto cannot_probe;
+			goto fail_with_jump_label;
 
 		/*
 		 * If the module freed .init.text, we couldn't insert
@@ -1351,7 +1349,7 @@ int __kprobes register_kprobe(struct kprobe *p)
 		if (within_module_init((unsigned long)p->addr, probed_mod) &&
 		    probed_mod->state != MODULE_STATE_COMING) {
 			module_put(probed_mod);
-			goto cannot_probe;
+			goto fail_with_jump_label;
 		}
 	}
 	preempt_enable();
@@ -1398,7 +1396,7 @@ out:
 
 	return ret;
 
-cannot_probe:
+fail_with_jump_label:
 	preempt_enable();
 	jump_label_unlock();
 	return -EINVAL;
@@ -1662,12 +1660,8 @@ static int __kprobes pre_handler_kretprobe(struct kprobe *p,
 		ri->rp = rp;
 		ri->task = current;
 
-		if (rp->entry_handler && rp->entry_handler(ri, regs)) {
-			spin_lock_irqsave(&rp->lock, flags);
-			hlist_add_head(&ri->hlist, &rp->free_instances);
-			spin_unlock_irqrestore(&rp->lock, flags);
+		if (rp->entry_handler && rp->entry_handler(ri, regs))
 			return 0;
-		}
 
 		arch_prepare_kretprobe(ri, regs);
 

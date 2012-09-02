@@ -932,6 +932,25 @@ again:
 	}
 	btrfs_release_path(path);
 
+	/* look for a conflicting sequence number */
+	di = btrfs_lookup_dir_index_item(trans, root, path, btrfs_ino(dir),
+					 btrfs_inode_ref_index(eb, ref),
+					 name, namelen, 0);
+	if (di && !IS_ERR(di)) {
+		ret = drop_one_dir_item(trans, root, path, dir, di);
+		BUG_ON(ret);
+	}
+	btrfs_release_path(path);
+
+	/* look for a conflicing name */
+	di = btrfs_lookup_dir_item(trans, root, path, btrfs_ino(dir),
+				   name, namelen, 0);
+	if (di && !IS_ERR(di)) {
+		ret = drop_one_dir_item(trans, root, path, dir, di);
+		BUG_ON(ret);
+	}
+	btrfs_release_path(path);
+
 insert:
 	/* insert our name */
 	ret = btrfs_add_link(trans, dir, inode, name, namelen, 0,

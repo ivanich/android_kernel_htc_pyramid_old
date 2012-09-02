@@ -29,7 +29,6 @@
 #include <mach/msm_iomap.h>
 #include <mach/panel_id.h>
 #include <mach/msm_bus_board.h>
-#include <linux/mfd/pmic8058.h>
 #include <mach/debug_display.h>
 
 #include "../devices.h"
@@ -1341,6 +1340,11 @@ int __init pyd_init_panel(struct resource *res, size_t size)
 		mipi_novatek_panel_data.shrink_pwm = pyd_shp_shrink_pwm;
 	else
 		mipi_novatek_panel_data.shrink_pwm = pyd_auo_shrink_pwm;
+
+	if (panel_type == PANEL_ID_PYD_SHARP)
+		mdp_pdata.color_enhancment_tbl = pyd_sharp_gamma;
+	else
+		mdp_pdata.color_enhancment_tbl = pyd_auo_gamma;
 
 	msm_fb_device.resource = res;
 	msm_fb_device.num_resources = size;

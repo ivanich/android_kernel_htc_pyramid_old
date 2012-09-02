@@ -9028,6 +9028,10 @@ static int tg3_test_interrupt(struct tg3 *tp)
 		    tnapi->hw_status->status_tag != tnapi->last_tag)
 			tw32_mailbox_f(tnapi->int_mbox, tnapi->last_tag << 24);
 
+		if (tg3_flag(tp, 57765_PLUS) &&
+		    tnapi->hw_status->status_tag != tnapi->last_tag)
+			tw32_mailbox_f(tnapi->int_mbox, tnapi->last_tag << 24);
+
 		msleep(10);
 	}
 

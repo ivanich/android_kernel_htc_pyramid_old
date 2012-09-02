@@ -66,6 +66,11 @@ static int ehci_pci_setup(struct usb_hcd *hcd)
 #endif
 		}
 		break;
+	case PCI_VENDOR_ID_NETMOS:
+		/* MosChip frame-index-register bug */
+		ehci_info(ehci, "applying MosChip frame-index workaround\n");
+		ehci->frame_index_bug = 1;
+		break;
 	}
 
 	ehci->caps = hcd->regs;
@@ -96,6 +101,11 @@ static int ehci_pci_setup(struct usb_hcd *hcd)
 					"workaround for >2GB RAM\n");
 			break;
 		}
+		break;
+	case PCI_VENDOR_ID_NETMOS:
+		/* MosChip frame-index-register bug */
+		ehci_info(ehci, "applying MosChip frame-index workaround\n");
+		ehci->frame_index_bug = 1;
 		break;
 	}
 
@@ -143,6 +153,14 @@ static int ehci_pci_setup(struct usb_hcd *hcd)
 		if (pdev->device == PCI_DEVICE_ID_INTEL_CE4100_USB) {
 			hcd->has_tt = 1;
 			tdi_reset(ehci);
+		}
+		if (pdev->subsystem_vendor == PCI_VENDOR_ID_ASUSTEK) {
+			/* EHCI #1 or #2 on 6 Series/C200 Series chipset */
+			if (pdev->device == 0x1c26 || pdev->device == 0x1c2d) {
+				ehci_info(ehci, "broken D3 during system sleep on ASUS\n");
+				hcd->broken_pci_sleep = 1;
+				device_set_wakeup_capable(&pdev->dev, false);
+			}
 		}
 		break;
 	case PCI_VENDOR_ID_TDI:
@@ -223,6 +241,11 @@ static int ehci_pci_setup(struct usb_hcd *hcd)
 			}
 			pci_dev_put(p_smbus);
 		}
+		break;
+	case PCI_VENDOR_ID_NETMOS:
+		/* MosChip frame-index-register bug */
+		ehci_info(ehci, "applying MosChip frame-index workaround\n");
+		ehci->frame_index_bug = 1;
 		break;
 	case PCI_VENDOR_ID_NETMOS:
 		/* MosChip frame-index-register bug */

@@ -192,14 +192,7 @@ static void sas_set_ex_phy(struct domain_device *dev, int phy_id,
 	phy->attached_sata_ps   = dr->attached_sata_ps;
 	phy->attached_iproto = dr->iproto << 1;
 	phy->attached_tproto = dr->tproto << 1;
-	/* help some expanders that fail to zero sas_address in the 'no
-	 * device' case
-	 */
-	if (phy->attached_dev_type == NO_DEVICE ||
-	    phy->linkrate < SAS_LINK_RATE_1_5_GBPS)
-		memset(phy->attached_sas_addr, 0, SAS_ADDR_SIZE);
-	else
-		memcpy(phy->attached_sas_addr, dr->attached_sas_addr, SAS_ADDR_SIZE);
+	memcpy(phy->attached_sas_addr, dr->attached_sas_addr, SAS_ADDR_SIZE);
 	phy->attached_phy_id = dr->attached_phy_id;
 	phy->phy_change_count = dr->change_count;
 	phy->routing_attr = dr->routing_attr;
@@ -1739,8 +1732,7 @@ static int sas_find_bcast_dev(struct domain_device *dev,
 				return res;
 		}
 	}
-out:
-	return res;
+	return 0;
 }
 
 static void sas_unregister_ex_tree(struct domain_device *dev)
@@ -1859,7 +1851,7 @@ static int sas_discover_new(struct domain_device *dev, int phy_id)
 			break;
 		}
 	}
-	return res;
+	return 0;
 }
 
 static int sas_rediscover_dev(struct domain_device *dev, int phy_id, bool last)
@@ -1969,11 +1961,8 @@ int sas_ex_revalidate_domain(struct domain_device *port_dev)
 			res = sas_rediscover(dev, phy_id);
 			i = phy_id + 1;
 		} while (i < ex->num_phys);
-
-		dev = NULL;
-		res = sas_find_bcast_dev(port_dev, &dev);
 	}
-	return res;
+	return 0;
 }
 
 int sas_smp_handler(struct Scsi_Host *shost, struct sas_rphy *rphy,

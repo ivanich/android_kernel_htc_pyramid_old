@@ -151,21 +151,21 @@ static int footswitch_enable(struct regulator_dev *rdev)
 	/* Make sure required clocks are on at the correct rates. */
 	rc = setup_clocks(fs);
 	if (rc)
-		return rc;
+		goto out;
 
 	/* Un-halt all bus ports in the power domain. */
 	if (fs->bus_port1) {
 		rc = msm_bus_axi_portunhalt(fs->bus_port1);
 		if (rc) {
 			pr_err("%s: Port 1 unhalt failed.\n", __func__);
-			goto err;
+			goto out;
 		}
 	}
 	if (fs->bus_port2) {
 		rc = msm_bus_axi_portunhalt(fs->bus_port2);
 		if (rc) {
 			pr_err("%s: Port 2 unhalt failed.\n", __func__);
-			goto err_port2_halt;
+			goto out;
 		}
 	}
 
@@ -209,12 +209,7 @@ static int footswitch_enable(struct regulator_dev *rdev)
 	restore_clocks(fs);
 
 	fs->is_enabled = true;
-	return 0;
-
-err_port2_halt:
-	msm_bus_axi_porthalt(fs->bus_port1);
-err:
-	restore_clocks(fs);
+out:
 	return rc;
 }
 
@@ -231,14 +226,14 @@ static int footswitch_disable(struct regulator_dev *rdev)
 	/* Make sure required clocks are on at the correct rates. */
 	rc = setup_clocks(fs);
 	if (rc)
-		return rc;
+		goto out;
 
 	/* Halt all bus ports in the power domain. */
 	if (fs->bus_port1) {
 		rc = msm_bus_axi_porthalt(fs->bus_port1);
 		if (rc) {
 			pr_err("%s: Port 1 halt failed.\n", __func__);
-			goto err;
+			goto out;
 		}
 	}
 	if (fs->bus_port2) {
@@ -280,12 +275,12 @@ static int footswitch_disable(struct regulator_dev *rdev)
 	writel_relaxed(regval, fs->gfs_ctl_reg);
 
 	fs->is_enabled = false;
-	return 0;
+
+	return rc;
 
 err_port2_halt:
 	msm_bus_axi_portunhalt(fs->bus_port1);
-err:
-	restore_clocks(fs);
+out:
 	return rc;
 }
 
@@ -306,14 +301,14 @@ static int gfx2d_footswitch_enable(struct regulator_dev *rdev)
 	/* Make sure required clocks are on at the correct rates. */
 	rc = setup_clocks(fs);
 	if (rc)
-		return rc;
+		goto out;
 
 	/* Un-halt all bus ports in the power domain. */
 	if (fs->bus_port1) {
 		rc = msm_bus_axi_portunhalt(fs->bus_port1);
 		if (rc) {
 			pr_err("%s: Port 1 unhalt failed.\n", __func__);
-			goto err;
+			goto out;
 		}
 	}
 
@@ -356,10 +351,7 @@ static int gfx2d_footswitch_enable(struct regulator_dev *rdev)
 	restore_clocks(fs);
 
 	fs->is_enabled = true;
-	return 0;
-
-err:
-	restore_clocks(fs);
+out:
 	return rc;
 }
 
@@ -376,14 +368,14 @@ static int gfx2d_footswitch_disable(struct regulator_dev *rdev)
 	/* Make sure required clocks are on at the correct rates. */
 	rc = setup_clocks(fs);
 	if (rc)
-		return rc;
+		goto out;
 
 	/* Halt all bus ports in the power domain. */
 	if (fs->bus_port1) {
 		rc = msm_bus_axi_porthalt(fs->bus_port1);
 		if (rc) {
 			pr_err("%s: Port 1 halt failed.\n", __func__);
-			goto err;
+			goto out;
 		}
 	}
 
@@ -419,10 +411,8 @@ static int gfx2d_footswitch_disable(struct regulator_dev *rdev)
 	restore_clocks(fs);
 
 	fs->is_enabled = false;
-	return 0;
 
-err:
-	restore_clocks(fs);
+out:
 	return rc;
 }
 

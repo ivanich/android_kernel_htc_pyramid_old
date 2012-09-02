@@ -306,18 +306,11 @@ static bool irq_check_poll(struct irq_desc *desc)
 	return irq_wait_for_poll(desc);
 }
 
-/**
- *	handle_simple_irq - Simple and software-decoded IRQs.
- *	@irq:	the interrupt number
- *	@desc:	the interrupt description structure for this irq
- *
- *	Simple interrupts are either sent from a demultiplexing interrupt
- *	handler or come from hardware, where no interrupt hardware control
- *	is necessary.
- *
- *	Note: The caller is expected to handle the ack, clear, mask and
- *	unmask issues if necessary.
+/*
+ * Called unconditionally from handle_level_irq() and only for oneshot
+ * interrupts from handle_fasteoi_irq()
  */
+
 void
 handle_simple_irq(unsigned int irq, struct irq_desc *desc)
 {
@@ -445,6 +438,9 @@ handle_fasteoi_irq(unsigned int irq, struct irq_desc *desc)
 
 	preflow_handler(desc);
 	handle_irq_event(desc);
+
+	if (desc->istate & IRQS_ONESHOT)
+		cond_unmask_irq(desc);
 
 	if (desc->istate & IRQS_ONESHOT)
 		cond_unmask_irq(desc);

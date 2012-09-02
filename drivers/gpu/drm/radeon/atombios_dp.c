@@ -209,6 +209,7 @@ int radeon_dp_i2c_aux_ch(struct i2c_adapter *adapter, int mode,
 	int reply_bytes = 1;
 	int ret;
 	u8 ack;
+	unsigned retry;
 
 	/* Set up the command byte */
 	if (mode & MODE_I2C_READ)
@@ -646,6 +647,18 @@ bool radeon_dp_needs_link_train(struct radeon_connector *radeon_connector)
 	return true;
 }
 
+bool radeon_dp_needs_link_train(struct radeon_connector *radeon_connector)
+{
+	u8 link_status[DP_LINK_STATUS_SIZE];
+	struct radeon_connector_atom_dig *dig = radeon_connector->con_priv;
+
+	if (!radeon_dp_get_link_status(radeon_connector, link_status))
+		return false;
+	if (dp_channel_eq_ok(link_status, dig->dp_lane_count))
+		return false;
+	return true;
+}
+
 struct radeon_dp_link_train_info {
 	struct radeon_device *rdev;
 	struct drm_encoder *encoder;
@@ -922,6 +935,18 @@ void radeon_dp_link_train(struct drm_encoder *encoder,
 	if ((dig_connector->dp_sink_type != CONNECTOR_OBJECT_ID_DISPLAYPORT) &&
 	    (dig_connector->dp_sink_type != CONNECTOR_OBJECT_ID_eDP))
 		return;
+
+	/* DPEncoderService newer than 1.1 can't program properly the
+	 * training pattern. When facing such version use the
+	 * DIGXEncoderControl (X== 1 | 2)
+	 */
+	dp_info.use_dpencoder = true;
+	index = GetIndexIntoMasterTable(COMMAND, DPEncoderService);
+	if (atom_parse_cmd_header(rdev->mode_info.atom_context, index, &frev, &crev)) {
+		if (crev > 1) {
+			dp_info.use_dpencoder = false;
+		}
+	}
 
 	/* DPEncoderService newer than 1.1 can't program properly the
 	 * training pattern. When facing such version use the

@@ -1046,15 +1046,13 @@ static long rmt_storage_ioctl(struct file *fp, unsigned int cmd,
 		break;
 
 	case RMT_STORAGE_WAIT_FOR_REQ:
-		pr_info("%s: wait for request ioctl\n", __func__);
+		pr_debug("%s: wait for request ioctl\n", __func__);
 		if (atomic_read(&rmc->total_events) == 0) {
 			ret = wait_event_interruptible(rmc->event_q,
 				atomic_read(&rmc->total_events) != 0);
 		}
-		if (ret < 0) {
-			pr_info("%s: wait_event_interruptible ret value %d\n", __func__, ret);
+		if (ret < 0)
 			break;
-		}
 		atomic_dec(&rmc->total_events);
 
 		kevent = get_event(rmc);
@@ -1128,7 +1126,6 @@ static long rmt_storage_ioctl(struct file *fp, unsigned int cmd,
 		break;
 	}
 
-	pr_info("%s: ioctl cmd %d return value %d\n", __func__, cmd, ret);
 	return ret;
 }
 

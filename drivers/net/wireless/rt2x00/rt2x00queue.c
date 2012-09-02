@@ -518,7 +518,9 @@ static int rt2x00queue_write_tx_data(struct queue_entry *entry,
 	if (test_bit(REQUIRE_DMA, &rt2x00dev->cap_flags))
 		rt2x00queue_map_txskb(entry);
 
-	return 0;
+out:
+	spin_unlock(&queue->tx_lock);
+	return ret;
 }
 
 static void rt2x00queue_write_tx_descriptor(struct queue_entry *entry,
@@ -562,9 +564,6 @@ int rt2x00queue_write_tx_frame(struct data_queue *queue, struct sk_buff *skb,
 	u8 rate_idx, rate_flags;
 	int ret = 0;
 
-	/*
-	 * That function must be called with bh disabled.
-	 */
 	spin_lock(&queue->tx_lock);
 
 	entry = rt2x00queue_get_entry(queue, Q_INDEX);
@@ -684,7 +683,9 @@ int rt2x00queue_clear_beacon(struct rt2x00_dev *rt2x00dev,
 
 	mutex_unlock(&intf->beacon_skb_mutex);
 
-	return 0;
+out:
+	spin_unlock(&queue->tx_lock);
+	return ret;
 }
 
 int rt2x00queue_update_beacon_locked(struct rt2x00_dev *rt2x00dev,
@@ -1112,7 +1113,9 @@ static int rt2x00queue_alloc_entries(struct data_queue *queue,
 
 	queue->entries = entries;
 
-	return 0;
+out:
+	spin_unlock(&queue->tx_lock);
+	return ret;
 }
 
 static void rt2x00queue_free_skbs(struct data_queue *queue)
@@ -1139,7 +1142,9 @@ static int rt2x00queue_alloc_rxskbs(struct data_queue *queue)
 		queue->entries[i].skb = skb;
 	}
 
-	return 0;
+out:
+	spin_unlock(&queue->tx_lock);
+	return ret;
 }
 
 int rt2x00queue_initialize(struct rt2x00_dev *rt2x00dev)
@@ -1258,7 +1263,9 @@ int rt2x00queue_allocate(struct rt2x00_dev *rt2x00dev)
 	if (req_atim)
 		rt2x00queue_init(rt2x00dev, rt2x00dev->atim, QID_ATIM);
 
-	return 0;
+out:
+	spin_unlock(&queue->tx_lock);
+	return ret;
 }
 
 void rt2x00queue_free(struct rt2x00_dev *rt2x00dev)

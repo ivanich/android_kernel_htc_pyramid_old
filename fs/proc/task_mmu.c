@@ -524,6 +524,9 @@ static int clear_refs_pte_range(pmd_t *pmd, unsigned long addr,
 		if (PageReserved(page))
 			continue;
 
+		if (PageReserved(page))
+			continue;
+
 		/* Clear accessed and referenced bits. */
 		ptep_test_and_clear_young(vma, addr, pte);
 		ClearPageReferenced(page);
@@ -966,8 +969,6 @@ static int gather_pte_stats(pmd_t *pmd, unsigned long addr,
 		spin_unlock(&walk->mm->page_table_lock);
 	}
 
-	if (pmd_trans_unstable(pmd))
-		return 0;
 	orig_pte = pte = pte_offset_map_lock(walk->mm, pmd, addr, &ptl);
 	do {
 		struct page *page = can_gather_numa_stats(*pte, md->vma, addr);
@@ -1050,6 +1051,9 @@ static int show_numa_map(struct seq_file *m, void *v)
 			vma->vm_end >= mm->start_stack) {
 		seq_printf(m, " stack");
 	}
+
+	if (is_vm_hugetlb_page(vma))
+		seq_printf(m, " huge");
 
 	if (is_vm_hugetlb_page(vma))
 		seq_printf(m, " huge");

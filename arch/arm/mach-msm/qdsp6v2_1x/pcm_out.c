@@ -300,69 +300,7 @@ static long pcm_out_ioctl(struct file *file, unsigned int cmd,
 			pr_aud_err("%s: EQUALIZER FAILED\n", __func__);
 		break;
 	}
-	case AUDIO_SET_Q6_EFFECT: {
-		struct param {
-			uint32_t effect_type; /* 0 for POPP, 1 for COPP */
-			uint32_t module_id;
-			uint32_t param_id;
-			uint32_t payload_size;
-		} q6_param;
-		void *payload;
-
-		if (copy_from_user(&q6_param, (void *) arg,
-					sizeof(q6_param))) {
-			pr_aud_err("%s: copy param from user failed\n",
-				__func__);
-			rc = -EFAULT;
-			break;
-		}
-
-		if (q6_param.payload_size <= 0 ||
-		    (q6_param.effect_type != 0 &&
-		     q6_param.effect_type != 1)) {
-			pr_aud_err("%s: unsupported param: %d, 0x%x, 0x%x, %d\n",
-				__func__, q6_param.effect_type,
-				q6_param.module_id, q6_param.param_id,
-				q6_param.payload_size);
-			rc = -EINVAL;
-			break;
-		}
-
-		payload = kzalloc(q6_param.payload_size, GFP_KERNEL);
-		if (!payload) {
-			pr_aud_err("%s: failed to allocate memory\n",
-				__func__);
-			rc = -ENOMEM;
-			break;
-		}
-		if (copy_from_user(payload, (void *) (arg + sizeof(q6_param)),
-				q6_param.payload_size)) {
-			pr_aud_err("%s: copy payload from user failed\n",
-				__func__);
-			kfree(payload);
-			rc = -EFAULT;
-			break;
-		}
-		if (q6_param.effect_type == 0) { /* POPP */
-			rc = q6asm_enable_effect(pcm->ac, q6_param.module_id,
-						q6_param.param_id,
-						q6_param.payload_size,
-						payload);
-		} else { /* COPP */
-			if (pcm->routing_id != -1) {
-				rc = q6adm_enable_effect(pcm->routing_id,
-						     q6_param.module_id,
-						     q6_param.param_id,
-						     q6_param.payload_size,
-						     payload);
-			} else {
-				pr_aud_err("%s: audio routing not ready\n",
-					__func__);
-				kfree(payload);
-				rc = -EINVAL;
-				break;
-			}
-		}
+	
 #if Q6_EFFECT_DEBUG
 		{
 			int *ptr;

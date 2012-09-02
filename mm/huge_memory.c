@@ -1252,6 +1252,8 @@ static void __split_huge_page_refcount(struct page *page)
 		zonestat = NR_LRU_BASE + page_lru(page);
 		__mod_zone_page_state(zone, zonestat, -(HPAGE_PMD_NR-1));
 	}
+	atomic_sub(tail_count, &page->_count);
+	BUG_ON(atomic_read(&page->_count) <= 0);
 
 	ClearPageCompound(page);
 	compound_unlock(page);

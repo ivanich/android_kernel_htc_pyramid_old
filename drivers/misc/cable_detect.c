@@ -859,7 +859,6 @@ static int cable_detect_probe(struct platform_device *pdev)
 #ifdef CONFIG_CABLE_DETECT_ACCESSORY
 		pInfo->detect_type = pdata->detect_type;
 		pInfo->usb_id_pin_gpio = pdata->usb_id_pin_gpio;
-		pInfo->idpin_irq = pdata->idpin_irq;
 		pInfo->mhl_reset_gpio = pdata->mhl_reset_gpio;
 		pInfo->mpp_data = &pdata->mpp_data;
 		pInfo->config_usb_id_gpios = pdata->config_usb_id_gpios;

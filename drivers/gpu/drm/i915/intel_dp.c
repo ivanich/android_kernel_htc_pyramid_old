@@ -1684,6 +1684,31 @@ intel_dp_get_edid_modes(struct drm_connector *connector, struct i2c_adapter *ada
 }
 
 
+static struct edid *
+intel_dp_get_edid(struct drm_connector *connector, struct i2c_adapter *adapter)
+{
+	struct intel_dp *intel_dp = intel_attached_dp(connector);
+	struct edid	*edid;
+
+	ironlake_edp_panel_vdd_on(intel_dp);
+	edid = drm_get_edid(connector, adapter);
+	ironlake_edp_panel_vdd_off(intel_dp);
+	return edid;
+}
+
+static int
+intel_dp_get_edid_modes(struct drm_connector *connector, struct i2c_adapter *adapter)
+{
+	struct intel_dp *intel_dp = intel_attached_dp(connector);
+	int	ret;
+
+	ironlake_edp_panel_vdd_on(intel_dp);
+	ret = intel_ddc_get_modes(connector, adapter);
+	ironlake_edp_panel_vdd_off(intel_dp);
+	return ret;
+}
+
+
 /**
  * Uses CRT_HOTPLUG_EN and CRT_HOTPLUG_STAT to detect DP connection.
  *

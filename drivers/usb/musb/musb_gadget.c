@@ -1718,6 +1718,8 @@ static int musb_gadget_pullup(struct usb_gadget *gadget, int is_on)
 
 	pm_runtime_get_sync(musb->controller);
 
+	pm_runtime_get_sync(musb->controller);
+
 	/* NOTE: this assumes we are sensing vbus; we'd rather
 	 * not pullup unless the B-session is active.
 	 */

@@ -87,7 +87,6 @@ extern struct platform_device msm_device_gadget_peripheral;
 extern struct platform_device msm_device_hsusb_host;
 extern struct platform_device msm_device_hsusb_host2;
 extern struct platform_device msm_device_hsic_host;
-extern struct platform_device msm_device_hsusb;
 
 extern struct platform_device msm_device_otg;
 
