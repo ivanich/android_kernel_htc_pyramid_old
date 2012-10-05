@@ -2781,6 +2781,7 @@ static struct tsens_platform_data pyr_tsens_pdata  = {
 		.tsens_num_sensor	= 6,
 		.slope 			= 702,
 };
+
 /*
 static struct platform_device msm_tsens_device = {
 	.name   = "tsens-tm",
