@@ -92,8 +92,6 @@ static int xhci_pci_setup(struct usb_hcd *hcd)
 		}
 		return 0;
 	}
-	if (pdev->vendor == PCI_VENDOR_ID_VIA)
-		xhci->quirks |= XHCI_RESET_ON_RESUME;
 
 	xhci->cap_regs = hcd->regs;
 	xhci->op_regs = hcd->regs +
@@ -125,9 +123,8 @@ static int xhci_pci_setup(struct usb_hcd *hcd)
 		xhci_dbg(xhci, "QUIRK: Fresco Logic revision %u "
 				"has broken MSI implementation\n",
 				pdev->revision);
+		xhci->quirks |= XHCI_TRUST_TX_LENGTH;
 	}
-	if (pdev->vendor == PCI_VENDOR_ID_VIA)
-		xhci->quirks |= XHCI_RESET_ON_RESUME;
 
 	if (pdev->vendor == PCI_VENDOR_ID_NEC)
 		xhci->quirks |= XHCI_NEC_HOST;
@@ -152,7 +149,6 @@ static int xhci_pci_setup(struct usb_hcd *hcd)
 		 * PPT chipsets.
 		 */
 		xhci->quirks |= XHCI_SPURIOUS_REBOOT;
-		xhci->quirks |= XHCI_AVOID_BEI;
 	}
 	if (pdev->vendor == PCI_VENDOR_ID_ETRON &&
 			pdev->device == PCI_DEVICE_ID_ASROCK_P67) {
@@ -182,8 +178,6 @@ static int xhci_pci_setup(struct usb_hcd *hcd)
 	} else {
 		dma_set_mask(hcd->self.controller, DMA_BIT_MASK(32));
 	}
-	if (pdev->vendor == PCI_VENDOR_ID_VIA)
-		xhci->quirks |= XHCI_RESET_ON_RESUME;
 
 	xhci_dbg(xhci, "Calling HCD init\n");
 	/* Initialize HCD and host controller data structures. */
@@ -237,8 +231,6 @@ static int xhci_pci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 		retval = -ENOMEM;
 		goto dealloc_usb2_hcd;
 	}
-	if (pdev->vendor == PCI_VENDOR_ID_VIA)
-		xhci->quirks |= XHCI_RESET_ON_RESUME;
 
 	/* Set the xHCI pointer before xhci_pci_setup() (aka hcd_driver.reset)
 	 * is called by usb_add_hcd().

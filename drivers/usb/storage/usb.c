@@ -827,52 +827,28 @@ static void release_everything(struct us_data *us)
 	scsi_host_put(us_to_host(us));
 }
 
-/* Thread to carry out delayed SCSI-device scanning */
-static int usb_stor_scan_thread(void * __us)
+/* Delayed-work routine to carry out SCSI-device scanning */
+static void usb_stor_scan_dwork(struct work_struct *work)
 {
-	struct us_data *us = (struct us_data *)__us;
+	struct us_data *us = container_of(work, struct us_data,
+			scan_dwork.work);
 	struct device *dev = &us->pusb_intf->dev;
 
-	dev_dbg(dev, "device found\n");
+	dev_dbg(dev, "starting scan\n");
 
-	set_freezable_with_signal();
-	/*
-	 * Wait for the timeout to expire or for a disconnect
-	 *
-	 * We can't freeze in this thread or we risk causing khubd to
-	 * fail to freeze, but we can't be non-freezable either. Nor can
-	 * khubd freeze while waiting for scanning to complete as it may
-	 * hold the device lock, causing a hang when suspending devices.
-	 * So we request a fake signal when freezing and use
-	 * interruptible sleep to kick us out of our wait early when
-	 * freezing happens.
-	 */
-	if (delay_use > 0) {
-		dev_dbg(dev, "waiting for device to settle "
-				"before scanning\n");
-		wait_event_interruptible_timeout(us->delay_wait,
-				test_bit(US_FLIDX_DONT_SCAN, &us->dflags),
-				delay_use * HZ);
+	/* For bulk-only devices, determine the max LUN value */
+	if (us->protocol == USB_PR_BULK && !(us->fflags & US_FL_SINGLE_LUN)) {
+		mutex_lock(&us->dev_mutex);
+		us->max_lun = usb_stor_Bulk_max_lun(us);
+		mutex_unlock(&us->dev_mutex);
 	}
+	scsi_scan_host(us_to_host(us));
+	dev_dbg(dev, "scan complete\n");
 
-	/* If the device is still connected, perform the scanning */
-	if (!test_bit(US_FLIDX_DONT_SCAN, &us->dflags)) {
-
-		/* For bulk-only devices, determine the max LUN value */
-		if (us->protocol == USB_PR_BULK &&
-				!(us->fflags & US_FL_SINGLE_LUN)) {
-			mutex_lock(&us->dev_mutex);
-			us->max_lun = usb_stor_Bulk_max_lun(us);
-			mutex_unlock(&us->dev_mutex);
-		}
-		scsi_scan_host(us_to_host(us));
-		dev_dbg(dev, "scan complete\n");
-
-		/* Should we unbind if no devices were detected? */
-	}
+	/* Should we unbind if no devices were detected? */
 
 	usb_autopm_put_interface(us->pusb_intf);
-	complete_and_exit(&us->scanning_done, 0);
+	clear_bit(US_FLIDX_SCAN_PENDING, &us->dflags);
 }
 
 static unsigned int usb_stor_sg_tablesize(struct usb_interface *intf)

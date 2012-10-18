@@ -35,19 +35,3 @@ static struct attribute *android_htc_usb_attributes[] = {
 static const struct attribute_group htc_attr_group = {
 	.attrs = android_htc_usb_attributes,
 };
-
-static int __devinit android_probe(struct platform_device *pdev)
-{
-	int err;
-	err = sysfs_create_group(&pdev->dev.kobj, &htc_attr_group);
-	if (err) {
-		pr_err("%s: failed to create HTC USB devices\n", __func__);
-	}
-
-	return 0;
-}
-
-static struct platform_driver android_platform_driver = {
-	.probe = android_probe,
-	.driver = { .name = "android_usb" },
-};

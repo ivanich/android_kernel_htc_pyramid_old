@@ -562,10 +562,18 @@ static void acm_port_down(struct acm *acm)
 
 static void acm_tty_hangup(struct tty_struct *tty)
 {
-	struct acm *acm = tty->driver_data;
-	tty_port_hangup(&acm->port);
+	struct acm *acm;
+
 	mutex_lock(&open_mutex);
+	acm = tty->driver_data;
+
+	if (!acm)
+		goto out;
+
+	tty_port_hangup(&acm->port);
 	acm_port_down(acm);
+
+out:
 	mutex_unlock(&open_mutex);
 }
 
@@ -1035,8 +1043,7 @@ skip_normal_probe:
 	}
 
 
-	if (data_interface->cur_altsetting->desc.bNumEndpoints < 2 ||
-	    control_interface->cur_altsetting->desc.bNumEndpoints == 0)
+	if (data_interface->cur_altsetting->desc.bNumEndpoints < 2)
 		return -EINVAL;
 
 	epctrl = &control_interface->cur_altsetting->endpoint[0].desc;
@@ -1558,9 +1565,6 @@ static const struct usb_device_id acm_ids[] = {
 	{ NOKIA_PCSUITE_ACM_INFO(0x0335), }, /* Nokia E7 */
 	{ NOKIA_PCSUITE_ACM_INFO(0x03cd), }, /* Nokia C7 */
 	{ SAMSUNG_PCSUITE_ACM_INFO(0x6651), }, /* Samsung GTi8510 (INNOV8) */
-
-	/* Support for Owen devices */
-	{ USB_DEVICE(0x03eb, 0x0030), }, /* Owen SI30 */
 
 	/* Support for Owen devices */
 	{ USB_DEVICE(0x03eb, 0x0030), }, /* Owen SI30 */

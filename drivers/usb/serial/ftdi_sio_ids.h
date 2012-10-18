@@ -49,13 +49,6 @@
  */
 #define TI_XDS100V2_PID		0xa6d0
 
-/*
- * Texas Instruments XDS100v2 JTAG / BeagleBone A3
- * http://processors.wiki.ti.com/index.php/XDS100
- * http://beagleboard.org/bone
- */
-#define TI_XDS100V2_PID		0xa6d0
-
 #define FTDI_NXTCAM_PID		0xABB8 /* NXTCam for Mindstorms NXT */
 
 /* US Interface Navigator (http://www.usinterface.com/) */
@@ -81,9 +74,6 @@
 #define FTDI_OPENDCC_THROTTLE_PID	0xBFDA
 #define FTDI_OPENDCC_GATEWAY_PID	0xBFDB
 #define FTDI_OPENDCC_GBM_PID	0xBFDC
-
-/* NZR SEM 16+ USB (http://www.nzr.de) */
-#define FTDI_NZR_SEM_USB_PID	0xC1E0	/* NZR SEM-LOG16+ */
 
 /*
  * RR-CirKits LocoBuffer USB (http://www.rr-cirkits.com)
@@ -524,11 +514,6 @@
  */
 #define FTDI_TAVIR_STK500_PID	0xFA33	/* STK500 AVR programmer */
 
-/*
- * TIAO product ids (FTDI_VID)
- * http://www.tiaowiki.com/w/Main_Page
- */
-#define FTDI_TIAO_UMPA_PID	0x8a98	/* TIAO/DIYGADGET USB Multi-Protocol Adapter */
 
 
 /********************************/
@@ -552,18 +537,9 @@
 #define ADI_GNICEPLUS_PID	0xF001
 
 /*
- * Hornby Elite
- */
-#define HORNBY_VID		0x04D8
-#define HORNBY_ELITE_PID	0x000A
-
-/*
  * Microchip Technology, Inc.
  *
- * MICROCHIP_VID (0x04D8) and MICROCHIP_USB_BOARD_PID (0x000A) are
- * used by single function CDC ACM class based firmware demo
- * applications.  The VID/PID has also been used in firmware
- * emulating FTDI serial chips by:
+ * MICROCHIP_VID (0x04D8) and MICROCHIP_USB_BOARD_PID (0x000A) are also used by:
  * Hornby Elite - Digital Command Control Console
  * http://www.hornby.com/hornby-dcc/controllers/
  */
@@ -808,6 +784,15 @@
 #define RTSYSTEMS_VID			0x2100	/* Vendor ID */
 #define RTSYSTEMS_SERIAL_VX7_PID	0x9e52	/* Serial converter for VX-7 Radios using FT232RL */
 #define RTSYSTEMS_CT29B_PID		0x9e54	/* CT29B Radio Cable */
+#define RTSYSTEMS_RTS01_PID		0x9e57	/* USB-RTS01 Radio Cable */
+
+
+/*
+ * Physik Instrumente
+ * http://www.physikinstrumente.com/en/products/
+ */
+#define PI_VID              0x1a72  /* Vendor ID */
+#define PI_E861_PID         0x1008  /* E-861 piezo controller USB connection */
 
 /*
  * Kondo Kagaku Co.Ltd.
@@ -1225,3 +1210,16 @@
  */
 /* TagTracer MIFARE*/
 #define FTDI_ZEITCONTROL_TAGTRACE_MIFARE_PID	0xF7C0
+
+/*
+ * Rainforest Automation
+ */
+/* ZigBee controller */
+#define FTDI_RF_R106		0x8A28
+
+/*
+ * Product: HCP HIT GPRS modem
+ * Manufacturer: HCP d.o.o.
+ * ATI command output: Cinterion MC55i
+ */
+#define FTDI_CINTERION_MC55I_PID	0xA951
