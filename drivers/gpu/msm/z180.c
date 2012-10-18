@@ -157,13 +157,15 @@ static struct z180_device device_2d0 = {
 		.active_cnt = 0,
 		.iomemname = KGSL_2D0_REG_MEMORY,
 		.ftbl = &z180_functable,
-#ifdef CONFIG_HAS_EARLYSUSPEND
 		.display_off = {
+#ifdef CONFIG_HAS_EARLYSUSPEND
+#if 0
 			.level = EARLY_SUSPEND_LEVEL_STOP_DRAWING,
 			.suspend = kgsl_early_suspend_driver,
 			.resume = kgsl_late_resume_driver,
-		},
 #endif
+#endif
+		},
 	},
 };
 
@@ -197,9 +199,11 @@ static struct z180_device device_2d1 = {
 		.ftbl = &z180_functable,
 		.display_off = {
 #ifdef CONFIG_HAS_EARLYSUSPEND
+#if 0
 			.level = EARLY_SUSPEND_LEVEL_STOP_DRAWING,
 			.suspend = kgsl_early_suspend_driver,
 			.resume = kgsl_late_resume_driver,
+#endif
 #endif
 		},
 	},
@@ -344,6 +348,8 @@ static void z180_cmdstream_start(struct kgsl_device *device)
 	struct z180_device *z180_dev = Z180_DEVICE(device);
 	unsigned int cmd = VGV3_NEXTCMD_JUMP << VGV3_NEXTCMD_NEXTCMD_FSHIFT;
 
+	KGSL_PWR_WARN(device, "reset timestamp from(%d, %d), device %d\n",
+	    z180_dev->timestamp, z180_dev->current_timestamp, device->id);
 	z180_dev->timestamp = 0;
 	z180_dev->current_timestamp = 0;
 
@@ -826,6 +832,15 @@ static int z180_wait(struct kgsl_device *device,
 {
 	int status = -EINVAL;
 	long timeout = 0;
+	unsigned int ts_processed;
+
+	ts_processed = device->ftbl->readtimestamp(device,
+		KGSL_TIMESTAMP_RETIRED);
+	if (ts_processed == 0 && timestamp > 10) {
+		KGSL_DRV_ERR(device, "QCT BUG: "
+		    "timestamp was reset and we are looking for %d\n",
+		    timestamp);
+	}
 
 	timeout = wait_io_event_interruptible_timeout(
 			device->wait_queue,
@@ -837,6 +852,7 @@ static int z180_wait(struct kgsl_device *device,
 	else if (timeout == 0) {
 		status = -ETIMEDOUT;
 		kgsl_pwrctrl_set_state(device, KGSL_STATE_HUNG);
+		KGSL_PWR_ERR(device, "state -> HUNG, device %d\n", device->id);
 	} else
 		status = timeout;
 

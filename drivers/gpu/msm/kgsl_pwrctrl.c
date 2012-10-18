@@ -28,6 +28,14 @@
 #define UPDATE_BUSY_VAL		1000000
 #define UPDATE_BUSY		50
 
+#ifdef CONFIG_SEC_LIMIT_MAX_FREQ
+#define LMF_BROWSER_THRESHOLD	500000
+#endif
+
+#ifdef CONFIG_CPU_FREQ_GOV_BADASS_GPU_CONTROL
+extern bool gpu_busy_state;
+#endif
+
 struct clk_pair {
 	const char *name;
 	uint map;
@@ -284,7 +292,7 @@ static int kgsl_pwrctrl_gpubusy_show(struct device *dev,
 DEVICE_ATTR(gpuclk, 0644, kgsl_pwrctrl_gpuclk_show, kgsl_pwrctrl_gpuclk_store);
 DEVICE_ATTR(max_gpuclk, 0644, kgsl_pwrctrl_max_gpuclk_show,
 	kgsl_pwrctrl_max_gpuclk_store);
-DEVICE_ATTR(pwrnap, 0664, kgsl_pwrctrl_pwrnap_show, kgsl_pwrctrl_pwrnap_store);
+DEVICE_ATTR(pwrnap, 0644, kgsl_pwrctrl_pwrnap_show, kgsl_pwrctrl_pwrnap_store);
 DEVICE_ATTR(idle_timer, 0644, kgsl_pwrctrl_idle_timer_show,
 	kgsl_pwrctrl_idle_timer_store);
 DEVICE_ATTR(gpubusy, 0644, kgsl_pwrctrl_gpubusy_show,
@@ -309,12 +317,20 @@ void kgsl_pwrctrl_uninit_sysfs(struct kgsl_device *device)
 	kgsl_remove_device_sysfs_files(device->dev, pwrctrl_attr_list);
 }
 
+#ifdef CONFIG_SEC_LIMIT_MAX_FREQ
+extern int lmf_browser_state;
+#endif
+
 /* Track the amount of time the gpu is on vs the total system time. *
  * Regularly update the percentage of busy time displayed by sysfs. */
 static void kgsl_pwrctrl_busy_time(struct kgsl_device *device, bool on_time)
 {
 	struct kgsl_busy *b = &device->pwrctrl.busy;
 	int elapsed;
+#ifdef CONFIG_SEC_LIMIT_MAX_FREQ
+	struct kgsl_pwrctrl *pwr;
+#endif
+
 	if (b->start.tv_sec == 0)
 		do_gettimeofday(&(b->start));
 	do_gettimeofday(&(b->stop));
@@ -332,10 +348,28 @@ static void kgsl_pwrctrl_busy_time(struct kgsl_device *device, bool on_time)
 		b->time = 0;
 	}
 	do_gettimeofday(&(b->start));
+
+#ifdef CONFIG_SEC_LIMIT_MAX_FREQ
+	pwr = &device->pwrctrl;
+
+	if (device->id == 0 &&
+		device->state == KGSL_STATE_ACTIVE &&
+		pwr->active_pwrlevel == KGSL_PWRLEVEL_TURBO) {
+		if (b->on_time_old > LMF_BROWSER_THRESHOLD)
+			lmf_browser_state = false;
+		else
+			lmf_browser_state = true;
+	}
+#endif
+#ifdef CONFIG_CPU_FREQ_GOV_BADASS_GPU_CONTROL
+	if (on_time)
+		gpu_busy_state = true;
+	else
+		gpu_busy_state = false;
+#endif
 }
 
-void kgsl_pwrctrl_clk(struct kgsl_device *device, int state,
-					  int requested_state)
+void kgsl_pwrctrl_clk(struct kgsl_device *device, int state)
 {
 	struct kgsl_pwrctrl *pwr = &device->pwrctrl;
 	int i = 0;
@@ -347,7 +381,7 @@ void kgsl_pwrctrl_clk(struct kgsl_device *device, int state,
 				if (pwr->grp_clks[i])
 					clk_disable(pwr->grp_clks[i]);
 			if ((pwr->pwrlevels[0].gpu_freq > 0) &&
-				(requested_state != KGSL_STATE_NAP))
+				(device->requested_state != KGSL_STATE_NAP))
 				clk_set_rate(pwr->grp_clks[0],
 					pwr->pwrlevels[pwr->num_pwrlevels - 1].
 					gpu_freq);
@@ -485,6 +519,7 @@ int kgsl_pwrctrl_init(struct kgsl_device *device)
 	}
 	pwr->num_pwrlevels = pdata->num_levels;
 	pwr->active_pwrlevel = pdata->init_level;
+	pwr->thermal_pwrlevel = pdata->max_level;
 	for (i = 0; i < pdata->num_levels; i++) {
 		pwr->pwrlevels[i].gpu_freq =
 		(pdata->pwrlevel[i].gpu_freq > 0) ?
@@ -510,7 +545,6 @@ int kgsl_pwrctrl_init(struct kgsl_device *device)
 	pwr->nap_allowed = pdata->nap_allowed;
 	pwr->idle_needed = pdata->idle_needed;
 	pwr->interval_timeout = pdata->idle_timeout;
-	pwr->strtstp_sleepwake = pdata->strtstp_sleepwake;
 	pwr->ebi1_clk = clk_get(&pdev->dev, "bus_clk");
 	if (IS_ERR(pwr->ebi1_clk))
 		pwr->ebi1_clk = NULL;
@@ -633,8 +667,7 @@ void kgsl_timer(unsigned long data)
 
 	KGSL_PWR_INFO(device, "idle timer expired device %d\n", device->id);
 	if (device->requested_state != KGSL_STATE_SUSPEND) {
-		if (device->pwrctrl.restore_slumber ||
-					device->pwrctrl.strtstp_sleepwake)
+		if (device->pwrctrl.restore_slumber)
 			kgsl_pwrctrl_request_state(device, KGSL_STATE_SLUMBER);
 		else
 			kgsl_pwrctrl_request_state(device, KGSL_STATE_SLEEP);
@@ -701,7 +734,7 @@ _nap(struct kgsl_device *device)
 			return -EBUSY;
 		}
 		kgsl_pwrctrl_irq(device, KGSL_PWRFLAGS_OFF);
-		kgsl_pwrctrl_clk(device, KGSL_PWRFLAGS_OFF, KGSL_STATE_NAP);
+		kgsl_pwrctrl_clk(device, KGSL_PWRFLAGS_OFF);
 		kgsl_pwrctrl_set_state(device, KGSL_STATE_NAP);
 		if (device->idle_wakelock.name)
 			wake_unlock(&device->idle_wakelock);
@@ -744,7 +777,7 @@ _sleep(struct kgsl_device *device)
 				pwr->pwrlevels[pwr->num_pwrlevels - 1].
 				gpu_freq);
 		_sleep_accounting(device);
-		kgsl_pwrctrl_clk(device, KGSL_PWRFLAGS_OFF, KGSL_STATE_SLEEP);
+		kgsl_pwrctrl_clk(device, KGSL_PWRFLAGS_OFF);
 		kgsl_pwrctrl_set_state(device, KGSL_STATE_SLEEP);
 		if (device->idle_wakelock.name)
 			wake_unlock(&device->idle_wakelock);
@@ -774,9 +807,7 @@ _slumber(struct kgsl_device *device)
 	case KGSL_STATE_NAP:
 	case KGSL_STATE_SLEEP:
 		del_timer_sync(&device->idle_timer);
-		if (!device->pwrctrl.strtstp_sleepwake)
-			kgsl_pwrctrl_pwrlevel_change(device,
-					KGSL_PWRLEVEL_NOMINAL);
+		kgsl_pwrctrl_pwrlevel_change(device, KGSL_PWRLEVEL_NOMINAL);
 		device->ftbl->suspend_context(device);
 		device->ftbl->stop(device);
 		device->pwrctrl.restore_slumber = true;
@@ -845,7 +876,7 @@ void kgsl_pwrctrl_wake(struct kgsl_device *device)
 		/* fall through */
 	case KGSL_STATE_NAP:
 		/* Turn on the core clocks */
-		kgsl_pwrctrl_clk(device, KGSL_PWRFLAGS_ON, KGSL_STATE_ACTIVE);
+		kgsl_pwrctrl_clk(device, KGSL_PWRFLAGS_ON);
 		/* Enable state before turning on irq */
 		kgsl_pwrctrl_set_state(device, KGSL_STATE_ACTIVE);
 		kgsl_pwrctrl_irq(device, KGSL_PWRFLAGS_ON);
@@ -870,7 +901,7 @@ void kgsl_pwrctrl_enable(struct kgsl_device *device)
 {
 	/* Order pwrrail/clk sequence based upon platform */
 	kgsl_pwrctrl_pwrrail(device, KGSL_PWRFLAGS_ON);
-	kgsl_pwrctrl_clk(device, KGSL_PWRFLAGS_ON, KGSL_STATE_ACTIVE);
+	kgsl_pwrctrl_clk(device, KGSL_PWRFLAGS_ON);
 	kgsl_pwrctrl_axi(device, KGSL_PWRFLAGS_ON);
 }
 EXPORT_SYMBOL(kgsl_pwrctrl_enable);
@@ -879,7 +910,7 @@ void kgsl_pwrctrl_disable(struct kgsl_device *device)
 {
 	/* Order pwrrail/clk sequence based upon platform */
 	kgsl_pwrctrl_axi(device, KGSL_PWRFLAGS_OFF);
-	kgsl_pwrctrl_clk(device, KGSL_PWRFLAGS_OFF, KGSL_STATE_SLEEP);
+	kgsl_pwrctrl_clk(device, KGSL_PWRFLAGS_OFF);
 	kgsl_pwrctrl_pwrrail(device, KGSL_PWRFLAGS_OFF);
 }
 EXPORT_SYMBOL(kgsl_pwrctrl_disable);
