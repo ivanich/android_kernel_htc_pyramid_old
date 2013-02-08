@@ -905,7 +905,7 @@ static int __init acpuclk_8x60_init(struct acpuclk_soc_data *soc_data)
 			acpuclk_8x60_set_rate(cpu, CONFIG_MSM_CPU_FREQ_MAX, SETRATE_INIT);
 #else
 		for_each_online_cpu(cpu)
-			acpuclk_8x60_set_rate(cpu, 1188000, SETRATE_INIT);
+			acpuclk_8x60_set_rate(cpu, 1512000, SETRATE_INIT);
 #endif
 
 
