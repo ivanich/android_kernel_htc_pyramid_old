@@ -7,7 +7,7 @@ NOW=$(date +"%F")
 NOWT=$(date +"%T")
 
 # Number of jobs (usually the number of cores your CPU has (if Hyperthreading count each core as 2))
-MAKE="2"
+MAKE="4"
 
 ## Set compiler location
 echo Setting compiler location...
@@ -19,10 +19,11 @@ make -j$MAKE ARCH=arm
 sleep 1
 
 # Post compile tasks
-echo Copying compiled kernel and modules to $HOME/KERNEL/out/ and building flashable zip.
+echo Copying compiled kernel and modules to $HOME/KERNEL/
+echo and building flashable zip
 sleep 1
-rm -rf $HOME/KERNEL/out/
 
+     mkdir -p $HOME/KERNEL/
      mkdir -p $HOME/KERNEL/out/
      mkdir -p $HOME/KERNEL/out/system/lib/modules/
      mkdir -p $HOME/KERNEL/out/kernel/
@@ -36,5 +37,7 @@ cp arch/arm/boot/zImage $HOME/KERNEL/out/kernel/
 # build flashable zip
 
 cd $HOME/KERNEL/out/
-zip -9 -r $HOME/ChronicKernel-dev-$NOW-$NOWT.zip .
-
+zip -9 -r $HOME/ChronicBruce-dev-$NOW-$NOWT.zip .
+echo Deleting Temp files and folders....
+rm -rf $HOME/KERNEL/
+echo Build Complete, Check your Home directory for a flashable zip
