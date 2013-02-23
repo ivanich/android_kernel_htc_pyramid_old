@@ -78,9 +78,7 @@ static int cy8c_reset_baseline(void);
 static DEFINE_MUTEX(cy8c_mutex);
 
 #ifdef CONFIG_TOUCHSCREEN_CYPRESS_SWEEP2WAKE
-int s2w_switch = 0;
-int s2w_temp = 0;
-bool s2w_changed = false;
+int s2w_switch = 1;
 bool scr_suspended = false, exec_count = true;
 bool scr_on_touch = false, led_exec_count = false, barrier[2] = {false, false};
 static struct input_dev * sweep2wake_pwrdev;
@@ -643,12 +641,7 @@ static ssize_t cy8c_sweep2wake_show(struct device *dev,
 {
 	size_t count = 0;
 
-    if (s2w_switch == s2w_temp)
-    {
-        count += sprintf(buf, "%d\n", s2w_switch);
-    } else {
-        count += sprintf(buf, "%d -> %d\n", s2w_switch, s2w_temp);
-    }
+	count += sprintf(buf, "%d\n", s2w_switch);
 
 	return count;
 }
@@ -658,15 +651,7 @@ static ssize_t cy8c_sweep2wake_dump(struct device *dev,
 {
 	if (buf[0] >= '0' && buf[0] <= '2' && buf[1] == '\n')
 		if (s2w_switch != buf[0] - '0')
-        {
-			s2w_temp = buf[0] - '0';
-            if (scr_suspended == false)
-            {
-                s2w_switch = s2w_temp;
-            } else {
-                s2w_changed = true;
-            }
-        }
+			s2w_switch = buf[0] - '0';
 
 	return count;
 }
@@ -1455,12 +1440,6 @@ static int cy8c_ts_resume(struct i2c_client *client)
 		enable_irq(client->irq);
 #ifdef CONFIG_TOUCHSCREEN_CYPRESS_SWEEP2WAKE
 	}
-
-    if (s2w_changed == true)
-    {
-        s2w_switch = s2w_temp;
-        s2w_changed = false;
-    }
 #endif
 	return 0;
 }
