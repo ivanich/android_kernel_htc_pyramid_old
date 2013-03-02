@@ -2,6 +2,8 @@ To compile this branch you need the linaro toolchain.
 
 To do this simply run the included script in the root of this repo by running ./fetch-linaro-toolchain.sh
 
+Then add this to ypur BoardConfig: TARGET_KERNEL_CUSTOM_TOOLCHAIN := linaro
+
 Once that is complete simply run ./compile-with-linaro.sh
 
 If you want to compile this branch in-line with ROM compiles one more changes is needed, pull the kerenl.mk_ from prebuilt-scripts and place it in ~/android/system/build/core/tasks/ and renmae to kernel.mk
