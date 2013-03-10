@@ -12,7 +12,7 @@ menuconfig MSM_VIDC
 config MSM_VIDC_720P
 	bool "720P Video Core"
 	depends on MSM_VIDC && ARCH_MSM7X30
-	default y
+	default n
 	help
 	This option enables support for Video core.
 

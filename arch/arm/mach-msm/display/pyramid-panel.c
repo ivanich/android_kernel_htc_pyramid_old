@@ -29,8 +29,9 @@
 #include <mach/msm_iomap.h>
 #include <mach/panel_id.h>
 #include <mach/msm_bus_board.h>
+#include <mach/msm_memtypes.h>
 #include <mach/debug_display.h>
-
+#include <linux/ion.h>
 #include "../devices.h"
 #include "../board-pyramid.h"
 #include "../devices-msm8x60.h"
@@ -254,110 +255,6 @@ static int lcdc_panel_power(int on)
 }
 
 #ifdef CONFIG_MSM_BUS_SCALING
-static struct msm_bus_vectors rotator_init_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_SMI,
-		.ab = 0,
-		.ib = 0,
-	},
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab = 0,
-		.ib = 0,
-		},
-	};
-
-static struct msm_bus_vectors rotator_ui_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_SMI,
-		.ab  = 0,
-		.ib  = 0,
-	},
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = (1024 * 600 * 4 * 2 * 60),
-		.ib  = (1024 * 600 * 4 * 2 * 60 * 1.5),
-	},
-};
-
-static struct msm_bus_vectors rotator_vga_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_SMI,
-		.ab  = (640 * 480 * 2 * 2 * 30),
-		.ib  = (640 * 480 * 2 * 2 * 30 * 1.5),
-	},
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = (640 * 480 * 2 * 2 * 30),
-		.ib  = (640 * 480 * 2 * 2 * 30 * 1.5),
-	},
-};
-
-static struct msm_bus_vectors rotator_720p_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_SMI,
-		.ab  = (1280 * 736 * 2 * 2 * 30),
-		.ib  = (1280 * 736 * 2 * 2 * 30 * 1.5),
-	},
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = (1280 * 736 * 2 * 2 * 30),
-		.ib  = (1280 * 736 * 2 * 2 * 30 * 1.5),
-	},
-};
-
-static struct msm_bus_vectors rotator_1080p_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_SMI,
-		.ab  = (1920 * 1088 * 2 * 2 * 30),
-		.ib  = (1920 * 1088 * 2 * 2 * 30 * 1.5),
-	},
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = (1920 * 1088 * 2 * 2 * 30),
-		.ib  = (1920 * 1088 * 2 * 2 * 30 * 1.5),
-	},
-};
-
-static struct msm_bus_paths rotator_bus_scale_usecases[] = {
-	{
-		ARRAY_SIZE(rotator_init_vectors),
-		rotator_init_vectors,
-	},
-	{
-		ARRAY_SIZE(rotator_ui_vectors),
-		rotator_ui_vectors,
-	},
-	{
-		ARRAY_SIZE(rotator_vga_vectors),
-		rotator_vga_vectors,
-	},
-	{
-		ARRAY_SIZE(rotator_720p_vectors),
-		rotator_720p_vectors,
-	},
-	{
-		ARRAY_SIZE(rotator_1080p_vectors),
-		rotator_1080p_vectors,
-	},
-};
-
-struct msm_bus_scale_pdata rotator_bus_scale_pdata = {
-	rotator_bus_scale_usecases,
-	ARRAY_SIZE(rotator_bus_scale_usecases),
-	.name = "rotator",
-};
-
 static struct msm_bus_vectors mdp_init_vectors[] = {
 	/* For now, 0th array entry is reserved.
 	 * Please leave 0 as is and don't use it
@@ -569,7 +466,7 @@ static int mipi_panel_power(int on)
 static struct lcdc_platform_data lcdc_pdata = {
 	.lcdc_power_save   = lcdc_panel_power,
 };
-
+#if 0
 /* The solution provide by Novatek to fixup the problem of blank screen while
  * performing static electric strick. Only AUO panel need this function.
  */
@@ -586,7 +483,7 @@ int pyd_esd_fixup(uint32_t mfd_data)
 
 	return 0;
 }
-
+#endif
 static struct mipi_dsi_platform_data mipi_pdata = {
 	.vsync_gpio		= 28,
 	.dsi_power_save		= mipi_panel_power,
@@ -702,6 +599,8 @@ static int msm_fb_detect_panel(const char *name)
 
 static struct msm_fb_platform_data msm_fb_pdata = {
 	.detect_client = msm_fb_detect_panel,
+	.prim_panel_name = "mipi_cmd_novatek_qhd",
+	.ext_panel_name = "",
 	.blt_mode = 1,
 	.width = 53,
 	.height = 95,
@@ -1264,7 +1163,7 @@ struct mdp_reg pyd_sharp_gamma[] = {
 	{0x94BFC, 0xFFFEFF, 0x0},
 	{0x90070, 0x1F, 0x0},
 };
-
+#if 0
 int pyd_mdp_color_enhance(void)
 {
 	mdp_color_enhancement(pyd_color_v11, ARRAY_SIZE(pyd_color_v11));
@@ -1281,7 +1180,7 @@ int pyd_mdp_gamma(void)
 
 	return 0;
 }
-
+#endif
 #if defined (CONFIG_FB_MSM_MDP_ABL)
 static struct gamma_curvy gamma_tbl = {
 	.gamma_len = 33,
@@ -1300,14 +1199,17 @@ static struct gamma_curvy gamma_tbl = {
 
 static struct msm_panel_common_pdata mdp_pdata = {
 	.gpio = 28,
-	.mdp_core_clk_rate = 200000000,
-	.mdp_core_clk_table = mdp_core_clk_rate_table,
-	.num_mdp_clk = ARRAY_SIZE(mdp_core_clk_rate_table),
+	.mdp_max_clk = 200000000,
 #ifdef CONFIG_MSM_BUS_SCALING
 	.mdp_bus_scale_table = &mdp_bus_scale_pdata,
 #endif
-	.mdp_color_enhance = pyd_mdp_color_enhance,
-	.mdp_gamma = pyd_mdp_gamma,
+	.mdp_rev = MDP_REV_41,
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+	.mem_hid = BIT(ION_CP_WB_HEAP_ID),
+#else
+	.mem_hid = MEMTYPE_EBI1,
+#endif
+	/* HTC additions */
 #if defined (CONFIG_FB_MSM_MDP_ABL)
 	.abl_gamma_tbl = &gamma_tbl,
 #endif
@@ -1340,20 +1242,17 @@ int __init pyd_init_panel(struct resource *res, size_t size)
 		mipi_novatek_panel_data.shrink_pwm = pyd_shp_shrink_pwm;
 	else
 		mipi_novatek_panel_data.shrink_pwm = pyd_auo_shrink_pwm;
-
+#if 0
 	if (panel_type == PANEL_ID_PYD_SHARP)
 		mdp_pdata.color_enhancment_tbl = pyd_sharp_gamma;
 	else
 		mdp_pdata.color_enhancment_tbl = pyd_auo_gamma;
-
+#endif
 	msm_fb_device.resource = res;
 	msm_fb_device.num_resources = size;
 
-#if 1
-	/* Cancel the fixup temporally due to it's cause flicking problem. */
-	if (panel_type == PANEL_ID_PYD_AUO_NT)
-		mipi_pdata.esd_fixup = pyd_esd_fixup;
-#endif
+	mdp_pdata.ov0_wb_size = MSM_FB_OVERLAY0_WRITEBACK_SIZE;
+	mdp_pdata.ov1_wb_size = MSM_FB_OVERLAY1_WRITEBACK_SIZE;
 
 	ret = platform_device_register(&msm_fb_device);
 	ret = platform_device_register(&lcdc_samsung_panel_device);

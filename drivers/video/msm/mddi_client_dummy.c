@@ -15,11 +15,10 @@
  * GNU General Public License for more details.
  */
 
-#include <linux/slab.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
-
+#include <linux/slab.h>
 #include <mach/msm_fb.h>
 
 struct panel_info {

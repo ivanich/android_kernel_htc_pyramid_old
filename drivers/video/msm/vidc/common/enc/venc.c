@@ -1,4 +1,4 @@
-/* Copyright (c) 2010-2012, Code Aurora Forum. All rights reserved.
+/* Copyright (c) 2010-2012, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -197,6 +197,8 @@ static void vid_enc_output_frame_done(struct video_client_ctx *client_ctx,
 	int pmem_fd;
 	struct file *file;
 	s32 buffer_index = -1;
+	u32 ion_flag = 0;
+	struct ion_handle *buff_handle = NULL;
 
 	if (!client_ctx || !vcd_frame_data) {
 		ERR("vid_enc_input_frame_done() NULL pointer\n");
@@ -259,7 +261,18 @@ static void vid_enc_output_frame_done(struct video_client_ctx *client_ctx,
 		venc_msg->venc_msg_info.statuscode =
 			VEN_S_EFATAL;
 	}
-
+	if (venc_msg->venc_msg_info.buf.len > 0) {
+		ion_flag = vidc_get_fd_info(client_ctx, BUFFER_TYPE_OUTPUT,
+					pmem_fd, kernel_vaddr, buffer_index,
+					&buff_handle);
+		if (ion_flag == CACHED) {
+			msm_ion_do_cache_op(client_ctx->user_ion_client,
+				buff_handle,
+				(unsigned long *) kernel_vaddr,
+				(unsigned long)venc_msg->venc_msg_info.buf.len,
+				ION_IOC_CLEAN_INV_CACHES);
+		}
+	}
 	mutex_lock(&client_ctx->msg_queue_lock);
 	list_add_tail(&venc_msg->list, &client_ctx->msg_queue);
 	mutex_unlock(&client_ctx->msg_queue_lock);
@@ -1589,6 +1602,45 @@ static long vid_enc_ioctl(struct file *file,
 		}
 		if (!result) {
 			ERR("setting VEN_IOCTL_(G)SET_LIVE_MODE failed\n");
+		}
+		break;
+	}
+	case VEN_IOCTL_SET_SLICE_DELIVERY_MODE:
+	{
+		struct vcd_property_hdr vcd_property_hdr;
+		u32 vcd_status = VCD_ERR_FAIL;
+		u32 enable = true;
+		vcd_property_hdr.prop_id = VCD_I_SLICE_DELIVERY_MODE;
+		vcd_property_hdr.sz = sizeof(u32);
+		vcd_status = vcd_set_property(client_ctx->vcd_handle,
+						&vcd_property_hdr, &enable);
+		if (vcd_status) {
+			pr_err(" Setting slice delivery mode failed");
+			return -EIO;
+		}
+		break;
+	}
+	case VEN_IOCTL_SET_SPS_PPS_FOR_IDR:
+	{
+		struct vcd_property_hdr vcd_property_hdr;
+		struct vcd_property_sps_pps_for_idr_enable idr_enable;
+		u32 vcd_status = VCD_ERR_FAIL;
+		u32 enabled = 1;
+
+		if (copy_from_user(&venc_msg, arg, sizeof(venc_msg)))
+			return -EFAULT;
+
+		vcd_property_hdr.prop_id = VCD_I_ENABLE_SPS_PPS_FOR_IDR;
+		vcd_property_hdr.sz = sizeof(idr_enable);
+
+		if (copy_from_user(&enabled, venc_msg.in, sizeof(u32)))
+			return -EFAULT;
+
+		idr_enable.sps_pps_for_idr_enable_flag = enabled;
+		vcd_status = vcd_set_property(client_ctx->vcd_handle,
+				&vcd_property_hdr, &idr_enable);
+		if (vcd_status) {
+			pr_err("Setting sps/pps per IDR failed");
 			return -EIO;
 		}
 		break;

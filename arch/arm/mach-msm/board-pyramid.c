@@ -1718,9 +1718,19 @@ static uint32_t gsbi4_gpio_table[] = {
 	GPIO_CFG(PYRAMID_CAM_I2C_SCL, 1, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
 };
 
+static uint32_t gsbi4_gpio_table_gpio[] = {
+	GPIO_CFG(PYRAMID_CAM_I2C_SDA, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
+	GPIO_CFG(PYRAMID_CAM_I2C_SCL, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
+};
+
 static uint32_t gsbi5_gpio_table[] = {
 	GPIO_CFG(PYRAMID_TP_I2C_SDA, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_4MA),
 	GPIO_CFG(PYRAMID_TP_I2C_SCL, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
+};
+
+static uint32_t gsbi5_gpio_table_gpio[] = {
+	GPIO_CFG(PYRAMID_TP_I2C_SDA, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
+	GPIO_CFG(PYRAMID_TP_I2C_SCL, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
 };
 
 static uint32_t gsbi7_gpio_table[] = {
@@ -1728,9 +1738,19 @@ static uint32_t gsbi7_gpio_table[] = {
 	GPIO_CFG(PYRAMID_GENERAL_I2C_SCL, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
 };
 
+static uint32_t gsbi7_gpio_table_gpio[] = {
+	GPIO_CFG(PYRAMID_GENERAL_I2C_SDA, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
+	GPIO_CFG(PYRAMID_GENERAL_I2C_SCL, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
+};
+
 static uint32_t gsbi10_gpio_table[] = {
 	GPIO_CFG(PYRAMID_SENSOR_I2C_SDA, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_4MA),
 	GPIO_CFG(PYRAMID_SENSOR_I2C_SCL, 1, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
+};
+
+static uint32_t gsbi10_gpio_table_gpio[] = {
+	GPIO_CFG(PYRAMID_SENSOR_I2C_SDA, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
+	GPIO_CFG(PYRAMID_SENSOR_I2C_SCL, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA),
 };
 
 
@@ -1744,8 +1764,8 @@ static void gsbi_qup_i2c_gpio_config(int adap_id, int config_type)
 	}
 
 	if ((adap_id == MSM_GSBI4_QUP_I2C_BUS_ID) && (config_type == 0)) {
-		gpio_tlmm_config(gsbi4_gpio_table[0], GPIO_CFG_DISABLE);
-		gpio_tlmm_config(gsbi4_gpio_table[1], GPIO_CFG_DISABLE);
+		gpio_tlmm_config(gsbi4_gpio_table_gpio[0], GPIO_CFG_ENABLE);
+		gpio_tlmm_config(gsbi4_gpio_table_gpio[1], GPIO_CFG_ENABLE);
 	}
 
 	if ((adap_id == MSM_GSBI5_QUP_I2C_BUS_ID) && (config_type == 1)) {
@@ -1754,8 +1774,8 @@ static void gsbi_qup_i2c_gpio_config(int adap_id, int config_type)
 	}
 
 	if ((adap_id == MSM_GSBI5_QUP_I2C_BUS_ID) && (config_type == 0)) {
-		gpio_tlmm_config(gsbi5_gpio_table[0], GPIO_CFG_DISABLE);
-		gpio_tlmm_config(gsbi5_gpio_table[1], GPIO_CFG_DISABLE);
+		gpio_tlmm_config(gsbi5_gpio_table_gpio[0], GPIO_CFG_ENABLE);
+		gpio_tlmm_config(gsbi5_gpio_table_gpio[1], GPIO_CFG_ENABLE);
 	}
 
 	if ((adap_id == MSM_GSBI7_QUP_I2C_BUS_ID) && (config_type == 1)) {
@@ -1764,8 +1784,8 @@ static void gsbi_qup_i2c_gpio_config(int adap_id, int config_type)
 	}
 
 	if ((adap_id == MSM_GSBI7_QUP_I2C_BUS_ID) && (config_type == 0)) {
-		gpio_tlmm_config(gsbi7_gpio_table[0], GPIO_CFG_DISABLE);
-		gpio_tlmm_config(gsbi7_gpio_table[1], GPIO_CFG_DISABLE);
+		gpio_tlmm_config(gsbi7_gpio_table_gpio[0], GPIO_CFG_ENABLE);
+		gpio_tlmm_config(gsbi7_gpio_table_gpio[1], GPIO_CFG_ENABLE);
 	}
 
 	if ((adap_id == MSM_GSBI10_QUP_I2C_BUS_ID) && (config_type == 1)) {
@@ -1774,8 +1794,8 @@ static void gsbi_qup_i2c_gpio_config(int adap_id, int config_type)
 	}
 
 	if ((adap_id == MSM_GSBI10_QUP_I2C_BUS_ID) && (config_type == 0)) {
-		gpio_tlmm_config(gsbi10_gpio_table[0], GPIO_CFG_DISABLE);
-		gpio_tlmm_config(gsbi10_gpio_table[1], GPIO_CFG_DISABLE);
+		gpio_tlmm_config(gsbi10_gpio_table_gpio[0], GPIO_CFG_ENABLE);
+		gpio_tlmm_config(gsbi10_gpio_table_gpio[1], GPIO_CFG_ENABLE);
 	}
 
 }
@@ -1907,10 +1927,6 @@ early_param("pmem_audio_size", pmem_audio_size_setup);
 #endif
 
 static struct resource msm_fb_resources[] = {
-	{
-		.flags  = IORESOURCE_DMA,
-	},
-	/* for overlay write back operation */
 	{
 		.flags  = IORESOURCE_DMA,
 	},
@@ -2210,21 +2226,17 @@ static struct platform_device ion_dev = {
 
 static void __init msm8x60_allocate_memory_regions(void)
 {
+	void *addr;
 	unsigned long size;
 
 	size = MSM_FB_SIZE;
-	msm_fb_resources[0].start = MSM_FB_BASE;
+
+	addr = alloc_bootmem_align(size, 0x1000);
+	msm_fb_resources[0].start = __pa(addr);
 	msm_fb_resources[0].end = msm_fb_resources[0].start + size - 1;
 	pr_info("allocating %lu bytes at 0x%p (0x%lx physical) for fb\n",
-		size, __va(MSM_FB_BASE), (unsigned long) MSM_FB_BASE);
+		size, addr, __pa(addr));
 
-#ifdef CONFIG_FB_MSM_OVERLAY_WRITEBACK
-	size = MSM_OVERLAY_BLT_SIZE;
-	msm_fb_resources[1].start = MSM_OVERLAY_BLT_BASE;
-	msm_fb_resources[1].end = msm_fb_resources[1].start + size - 1;
-	pr_info("allocating %lu bytes at 0x%p (0x%lx physical) for overlay\n",
-		size, __va(MSM_OVERLAY_BLT_BASE), (unsigned long) MSM_OVERLAY_BLT_BASE);
-#endif
 }
 
 static int pyramid_ts_cy8c_set_rst(int on)
@@ -3194,7 +3206,7 @@ static void pyramid_usb_dpdn_switch(int path)
 	}
 
 	#ifdef CONFIG_FB_MSM_HDMI_MHL
-	sii9234_change_usb_owner((path == PATH_MHL)?1:0);
+//	sii9234_change_usb_owner((path == PATH_MHL)?1:0);
 	#endif
 }
 
@@ -3282,9 +3294,9 @@ static struct platform_device pm8058_leds = {
 };
 
 #ifdef CONFIG_FB_MSM_HDMI_MHL
-static struct regulator *reg_8901_l0;
-static struct regulator *reg_8058_l19;
-static struct regulator *reg_8901_l3;
+//static struct regulator *reg_8901_l0;
+//static struct regulator *reg_8058_l19;
+//static struct regulator *reg_8901_l3;
 
 static uint32_t msm_hdmi_off_gpio[] = {
 	GPIO_CFG(170,  0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
@@ -3309,17 +3321,17 @@ static void mhl_sii9234_1v2_power(bool enable)
 
 	if (enable) {
 		config_gpio_table(msm_hdmi_on_gpio, ARRAY_SIZE(msm_hdmi_on_gpio));
-		hdmi_hpd_feature(1);
+//		hdmi_hpd_feature(1);
 		pr_info("%s(on): success\n", __func__);
 	} else {
 		config_gpio_table(msm_hdmi_off_gpio, ARRAY_SIZE(msm_hdmi_off_gpio));
-		hdmi_hpd_feature(0);
+//		hdmi_hpd_feature(0);
 		pr_info("%s(off): success\n", __func__);
 	}
 
 	prev_on = enable;
 }
-
+#if 0
 static int mhl_sii9234_all_power(bool enable)
 {
 	static bool prev_on;
@@ -3395,7 +3407,7 @@ static int mhl_sii9234_all_power(bool enable)
 
 	return 0;
 }
-
+#endif
 #ifdef CONFIG_FB_MSM_HDMI_MHL_SII9234
 static uint32_t mhl_gpio_table[] = {
 	GPIO_CFG(PYRAMID_GPIO_MHL_RESET, 0, GPIO_CFG_OUTPUT, GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
@@ -3652,12 +3664,15 @@ static void __init reserve_ion_memory(void)
 #endif
 }
 
+static void __init reserve_mdp_memory(void);
+
 static void __init msm8x60_calculate_reserve_sizes(void)
 {
 
 	size_pmem_devices();
 	reserve_pmem_memory();
-  	reserve_ion_memory();
+	reserve_ion_memory();
+	reserve_mdp_memory();
 }
 
 static int msm8x60_paddr_to_memtype(unsigned int paddr)
@@ -4047,7 +4062,7 @@ static struct pm8058_pwm_pdata pm8058_pwm_data = {
 
 static struct pm8xxx_rtc_platform_data pm8058_rtc_pdata = {
 	.rtc_write_enable	= true,
-	.rtc_alarm_powerup	= false,
+	.rtc_alarm_powerup	= true,
 };
 
 static struct pm8xxx_pwrkey_platform_data pm8058_pwrkey_pdata = {
@@ -6074,6 +6089,308 @@ error:
 }
 #endif /* CONFIG_FB_MSM_HDMI_MSM_PANEL */
 
+#ifdef CONFIG_MSM_BUS_SCALING
+
+static struct msm_bus_vectors rotator_init_vectors[] = {
+	{
+		.src = MSM_BUS_MASTER_ROTATOR,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab = 0,
+		.ib = 0,
+	},
+	{
+		.src = MSM_BUS_MASTER_ROTATOR,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab = 0,
+		.ib = 0,
+	},
+};
+
+static struct msm_bus_vectors rotator_ui_vectors[] = {
+	{
+		.src = MSM_BUS_MASTER_ROTATOR,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab = 0,
+		.ib = 0,
+	},
+	{
+		.src = MSM_BUS_MASTER_ROTATOR,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab = (1024 * 600 * 4 * 2 * 60),
+		.ib = (1024 * 600 * 4 * 2 * 60 * 1.5),
+	},
+};
+
+static struct msm_bus_vectors rotator_vga_vectors[] = {
+	{
+		.src = MSM_BUS_MASTER_ROTATOR,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab = (640 * 480 * 2 * 2 * 30),
+		.ib = (640 * 480 * 2 * 2 * 30 * 1.5),
+	},
+	{
+		.src = MSM_BUS_MASTER_ROTATOR,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab = (640 * 480 * 2 * 2 * 30),
+		.ib = (640 * 480 * 2 * 2 * 30 * 1.5),
+	},
+};
+
+static struct msm_bus_vectors rotator_720p_vectors[] = {
+	{
+		.src = MSM_BUS_MASTER_ROTATOR,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab  = (1280 * 736 * 2 * 2 * 30),
+		.ib  = (1280 * 736 * 2 * 2 * 30 * 1.5),
+	},
+	{
+		.src = MSM_BUS_MASTER_ROTATOR,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab  = (1280 * 736 * 2 * 2 * 30),
+		.ib  = (1280 * 736 * 2 * 2 * 30 * 1.5),
+	},
+};
+
+static struct msm_bus_vectors rotator_1080p_vectors[] = {
+	{
+		.src = MSM_BUS_MASTER_ROTATOR,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab  = (1920 * 1088 * 2 * 2 * 30),
+		.ib  = (1920 * 1088 * 2 * 2 * 30 * 1.5),
+	},
+	{
+		.src = MSM_BUS_MASTER_ROTATOR,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab  = (1920 * 1088 * 2 * 2 * 30),
+		.ib  = (1920 * 1088 * 2 * 2 * 30 * 1.5),
+	},
+};
+
+static struct msm_bus_paths rotator_bus_scale_usecases[] = {
+	{
+		ARRAY_SIZE(rotator_init_vectors),
+		rotator_init_vectors,
+	},
+	{
+		ARRAY_SIZE(rotator_ui_vectors),
+		rotator_ui_vectors,
+	},
+	{
+		ARRAY_SIZE(rotator_vga_vectors),
+		rotator_vga_vectors,
+	},
+	{
+		ARRAY_SIZE(rotator_720p_vectors),
+		rotator_720p_vectors,
+	},
+	{
+		ARRAY_SIZE(rotator_1080p_vectors),
+		rotator_1080p_vectors,
+	},
+};
+
+struct msm_bus_scale_pdata rotator_bus_scale_pdata = {
+	rotator_bus_scale_usecases,
+	ARRAY_SIZE(rotator_bus_scale_usecases),
+	.name = "rotator",
+};
+
+#endif
+
+static struct msm_bus_vectors mdp_init_vectors[] = {
+	/* For now, 0th array entry is reserved.
+	 * Please leave 0 as is and don't use it
+	 */
+	{
+		.src = MSM_BUS_MASTER_MDP_PORT0,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab = 0,
+		.ib = 0,
+	},
+	/* Master and slaves can be from different fabrics */
+	{
+		.src = MSM_BUS_MASTER_MDP_PORT0,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab = 0,
+		.ib = 0,
+	},
+};
+
+static struct msm_bus_vectors mdp_sd_ebi_vectors[] = {
+	/* Default case static display/UI/2d/3d if FB SMI */
+	{
+		.src = MSM_BUS_MASTER_MDP_PORT0,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab = 0,
+		.ib = 0,
+	},
+	/* Master and slaves can be from different fabrics */
+	{
+		.src = MSM_BUS_MASTER_MDP_PORT0,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab = 388800000,
+		.ib = 486000000 * 2,
+	},
+};
+static struct msm_bus_vectors mdp_vga_vectors[] = {
+	/* VGA and less video */
+	{
+		.src = MSM_BUS_MASTER_MDP_PORT0,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab = 458092800,
+		.ib = 572616000,
+	},
+	{
+		.src = MSM_BUS_MASTER_MDP_PORT0,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab = 458092800,
+		.ib = 572616000 * 2,
+	},
+};
+static struct msm_bus_vectors mdp_720p_vectors[] = {
+	/* 720p and less video */
+	{
+		.src = MSM_BUS_MASTER_MDP_PORT0,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab = 471744000,
+		.ib = 589680000,
+	},
+	/* Master and slaves can be from different fabrics */
+       {
+		.src = MSM_BUS_MASTER_MDP_PORT0,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+	       .ab = 471744000,
+	       .ib = 589680000 * 2,
+	},
+};
+
+static struct msm_bus_vectors mdp_1080p_vectors[] = {
+	/* 1080p and less video */
+	{
+		.src = MSM_BUS_MASTER_MDP_PORT0,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab = 575424000,
+		.ib = 719280000,
+	},
+	/* Master and slaves can be from different fabrics */
+	{
+		.src = MSM_BUS_MASTER_MDP_PORT0,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab = 575424000,
+		.ib = 719280000 * 2,
+	},
+};
+
+
+static struct msm_bus_vectors mdp_sd_smi_vectors[] = {
+	/* Default case static display/UI/2d/3d if FB SMI */
+	{
+		.src = MSM_BUS_MASTER_MDP_PORT0,
+		.dst = MSM_BUS_SLAVE_SMI,
+		.ab = 175110000,
+		.ib = 218887500,
+	},
+	/* Master and slaves can be from different fabrics */
+	{
+		.src = MSM_BUS_MASTER_MDP_PORT0,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab = 0,
+		.ib = 0,
+	},
+};
+static struct msm_bus_paths mdp_bus_scale_usecases[] = {
+	{
+		ARRAY_SIZE(mdp_init_vectors),
+		mdp_init_vectors,
+	},
+	{
+		ARRAY_SIZE(mdp_sd_smi_vectors),
+		mdp_sd_smi_vectors,
+	},
+	{
+		ARRAY_SIZE(mdp_sd_ebi_vectors),
+		mdp_sd_ebi_vectors,
+	},
+	{
+		ARRAY_SIZE(mdp_vga_vectors),
+		mdp_vga_vectors,
+	},
+	{
+		ARRAY_SIZE(mdp_720p_vectors),
+		mdp_720p_vectors,
+	},
+	{
+		ARRAY_SIZE(mdp_1080p_vectors),
+		mdp_1080p_vectors,
+	},
+};
+static struct msm_bus_scale_pdata mdp_bus_scale_pdata = {
+	mdp_bus_scale_usecases,
+	ARRAY_SIZE(mdp_bus_scale_usecases),
+	.name = "mdp",
+};
+
+#define MDP_VSYNC_GPIO			28
+
+/*
+ * MIPI_DSI only use 8058_LDO0 which need always on
+ * therefore it need to be put at low power mode if
+ * it was not used instead of turn it off.
+ */
+static int mipi_dsi_panel_power(int on)
+{
+	int flag_on = !!on;
+	static int mipi_dsi_power_save_on;
+	static struct regulator *ldo0;
+	int rc = 0;
+
+	if (mipi_dsi_power_save_on == flag_on)
+		return 0;
+
+	mipi_dsi_power_save_on = flag_on;
+
+	if (ldo0 == NULL) {	/* init */
+		ldo0 = regulator_get(NULL, "8058_l0");
+		if (IS_ERR(ldo0)) {
+			pr_debug("%s: LDO0 failed\n", __func__);
+			rc = PTR_ERR(ldo0);
+			return rc;
+		}
+
+		rc = regulator_set_voltage(ldo0, 1200000, 1200000);
+		if (rc)
+			goto out;
+
+		rc = regulator_enable(ldo0);
+		if (rc)
+			goto out;
+	}
+
+	if (on) {
+		/* set ldo0 to HPM */
+		rc = regulator_set_optimum_mode(ldo0, 100000);
+		if (rc < 0)
+			goto out;
+	} else {
+		/* set ldo0 to LPM */
+		rc = regulator_set_optimum_mode(ldo0, 1000);
+		if (rc < 0)
+			goto out;
+	}
+
+	return 0;
+out:
+	regulator_disable(ldo0);
+	regulator_put(ldo0);
+	ldo0 = NULL;
+	return rc;
+}
+
+static struct mipi_dsi_platform_data mipi_dsi_pdata = {
+	.vsync_gpio = MDP_VSYNC_GPIO,
+	.dsi_power_save   = mipi_dsi_panel_power,
+};
+
 #ifdef CONFIG_FB_MSM_TVOUT
 static struct regulator *reg_8058_l13;
 
@@ -6118,6 +6435,32 @@ static int atv_dac_power(int on)
 
 }
 #endif
+
+static struct msm_panel_common_pdata mdp_pdata = {
+	.gpio = MDP_VSYNC_GPIO,
+	.mdp_max_clk = 200000000,
+#ifdef CONFIG_MSM_BUS_SCALING
+	.mdp_bus_scale_table = &mdp_bus_scale_pdata,
+#endif
+	.mdp_rev = MDP_REV_41,
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+	.mem_hid = BIT(ION_CP_WB_HEAP_ID),
+#else
+	.mem_hid = MEMTYPE_EBI1,
+#endif
+};
+
+static void __init reserve_mdp_memory(void)
+{
+	mdp_pdata.ov0_wb_size = MSM_FB_OVERLAY0_WRITEBACK_SIZE;
+	mdp_pdata.ov1_wb_size = MSM_FB_OVERLAY1_WRITEBACK_SIZE;
+#if defined(CONFIG_ANDROID_PMEM) && !defined(CONFIG_MSM_MULTIMEDIA_USE_ION)
+	msm8x60_reserve_table[mdp_pdata.mem_hid].size +=
+		mdp_pdata.ov0_wb_size;
+	msm8x60_reserve_table[mdp_pdata.mem_hid].size +=
+		mdp_pdata.ov1_wb_size;
+#endif
+}
 
 #ifdef CONFIG_FB_MSM_TVOUT
 
@@ -6183,6 +6526,17 @@ static struct tvenc_platform_data atv_pdata = {
 #endif
 };
 #endif
+
+static void __init msm_fb_add_devices(void)
+{
+	if (machine_is_msm8x60_rumi3())
+		msm_fb_register_device("mdp", NULL);
+	else
+		msm_fb_register_device("mdp", &mdp_pdata);
+
+	msm_fb_register_device("mipi_dsi", &mipi_dsi_pdata);
+
+}
 
 static void __init msm8x60_cfg_smsc911x(void)
 {
@@ -6422,6 +6776,9 @@ static void __init msm8x60_init(struct msm_board_data *board_data)
 
 	pyd_init_panel(msm_fb_resources, ARRAY_SIZE(msm_fb_resources));
 	pyramid_ts_cy8c_set_system_rev(system_rev);
+
+	if (!machine_is_msm8x60_sim())
+		msm_fb_add_devices();
 	fixup_i2c_configs();
 	register_i2c_devices();
 
