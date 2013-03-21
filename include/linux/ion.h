@@ -96,10 +96,12 @@ enum ion_fixed_position {
  */
 #define ION_HEAP(bit) (1 << (bit))
 
+#define ION_KMALLOC_HEAP_NAME  "kmalloc"
 #define ION_VMALLOC_HEAP_NAME	"vmalloc"
 #define ION_AUDIO_HEAP_NAME	"audio"
 #define ION_SF_HEAP_NAME	"sf"
 #define ION_MM_HEAP_NAME	"mm"
+#define ION_ROTATOR_HEAP_NAME   "rotator"
 #define ION_CAMERA_HEAP_NAME	"camera_preview"
 #define ION_IOMMU_HEAP_NAME	"iommu"
 #define ION_MFC_HEAP_NAME	"mfc"
