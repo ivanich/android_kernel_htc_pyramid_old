@@ -1,0 +1,125 @@
+commit fdd922d0e4a27ce5f08cc57a8670a495e20d8836
+Author: Ethan Chen <intervigil@gmail.com>
+Date:   Mon Sep 3 18:18:22 2012 -0700
+
+    pyramid: add rotator bus scaling data
+
+diff --git a/arch/arm/mach-msm/board-pyramid.c b/arch/arm/mach-msm/board-pyramid.c
+index a6edfab..39acd0d 100644
+--- a/arch/arm/mach-msm/board-pyramid.c
++++ b/arch/arm/mach-msm/board-pyramid.c
+@@ -5936,6 +5936,114 @@ error:
+ }
+ #endif /* CONFIG_FB_MSM_HDMI_MSM_PANEL */
+ 
++#ifdef CONFIG_MSM_BUS_SCALING
++
++static struct msm_bus_vectors rotator_init_vectors[] = {
++	{
++		.src = MSM_BUS_MASTER_ROTATOR,
++		.dst = MSM_BUS_SLAVE_SMI,
++		.ab = 0,
++		.ib = 0,
++	},
++	{
++		.src = MSM_BUS_MASTER_ROTATOR,
++		.dst = MSM_BUS_SLAVE_EBI_CH0,
++		.ab = 0,
++		.ib = 0,
++	},
++};
++
++static struct msm_bus_vectors rotator_ui_vectors[] = {
++	{
++		.src = MSM_BUS_MASTER_ROTATOR,
++		.dst = MSM_BUS_SLAVE_SMI,
++		.ab = 0,
++		.ib = 0,
++	},
++	{
++		.src = MSM_BUS_MASTER_ROTATOR,
++		.dst = MSM_BUS_SLAVE_EBI_CH0,
++		.ab = (1024 * 600 * 4 * 2 * 60),
++		.ib = (1024 * 600 * 4 * 2 * 60 * 1.5),
++	},
++};
++
++static struct msm_bus_vectors rotator_vga_vectors[] = {
++	{
++		.src = MSM_BUS_MASTER_ROTATOR,
++		.dst = MSM_BUS_SLAVE_SMI,
++		.ab = (640 * 480 * 2 * 2 * 30),
++		.ib = (640 * 480 * 2 * 2 * 30 * 1.5),
++	},
++	{
++		.src = MSM_BUS_MASTER_ROTATOR,
++		.dst = MSM_BUS_SLAVE_EBI_CH0,
++		.ab = (640 * 480 * 2 * 2 * 30),
++		.ib = (640 * 480 * 2 * 2 * 30 * 1.5),
++	},
++};
++
++static struct msm_bus_vectors rotator_720p_vectors[] = {
++	{
++		.src = MSM_BUS_MASTER_ROTATOR,
++		.dst = MSM_BUS_SLAVE_SMI,
++		.ab  = (1280 * 736 * 2 * 2 * 30),
++		.ib  = (1280 * 736 * 2 * 2 * 30 * 1.5),
++	},
++	{
++		.src = MSM_BUS_MASTER_ROTATOR,
++		.dst = MSM_BUS_SLAVE_EBI_CH0,
++		.ab  = (1280 * 736 * 2 * 2 * 30),
++		.ib  = (1280 * 736 * 2 * 2 * 30 * 1.5),
++	},
++};
++
++static struct msm_bus_vectors rotator_1080p_vectors[] = {
++	{
++		.src = MSM_BUS_MASTER_ROTATOR,
++		.dst = MSM_BUS_SLAVE_SMI,
++		.ab  = (1920 * 1088 * 2 * 2 * 30),
++		.ib  = (1920 * 1088 * 2 * 2 * 30 * 1.5),
++	},
++	{
++		.src = MSM_BUS_MASTER_ROTATOR,
++		.dst = MSM_BUS_SLAVE_EBI_CH0,
++		.ab  = (1920 * 1088 * 2 * 2 * 30),
++		.ib  = (1920 * 1088 * 2 * 2 * 30 * 1.5),
++	},
++};
++
++static struct msm_bus_paths rotator_bus_scale_usecases[] = {
++	{
++		ARRAY_SIZE(rotator_init_vectors),
++		rotator_init_vectors,
++	},
++	{
++		ARRAY_SIZE(rotator_ui_vectors),
++		rotator_ui_vectors,
++	},
++	{
++		ARRAY_SIZE(rotator_vga_vectors),
++		rotator_vga_vectors,
++	},
++	{
++		ARRAY_SIZE(rotator_720p_vectors),
++		rotator_720p_vectors,
++	},
++	{
++		ARRAY_SIZE(rotator_1080p_vectors),
++		rotator_1080p_vectors,
++	},
++};
++
++struct msm_bus_scale_pdata rotator_bus_scale_pdata = {
++	rotator_bus_scale_usecases,
++	ARRAY_SIZE(rotator_bus_scale_usecases),
++	.name = "rotator",
++};
++
++#endif
++
+ #ifdef CONFIG_FB_MSM_TVOUT
+ static struct regulator *reg_8058_l13;
+ 

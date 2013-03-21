@@ -62,11 +62,6 @@
 #define MSMFB_WRITEBACK_INIT _IO(MSMFB_IOCTL_MAGIC, 150)
 #define MSMFB_WRITEBACK_START _IO(MSMFB_IOCTL_MAGIC, 151)
 #define MSMFB_WRITEBACK_STOP _IO(MSMFB_IOCTL_MAGIC, 152)
-
-#define MSMFB_WRITEBACK_REGISTER_BUFFER _IOW(MSMFB_IOCTL_MAGIC, 151, \
-						struct msmfb_writeback_data)
-#define MSMFB_WRITEBACK_UNREGISTER_BUFFER _IOW(MSMFB_IOCTL_MAGIC, 152, \
-						struct msmfb_writeback_data)
 #define MSMFB_WRITEBACK_QUEUE_BUFFER _IOW(MSMFB_IOCTL_MAGIC, 153, \
 						struct msmfb_data)
 #define MSMFB_WRITEBACK_DEQUEUE_BUFFER _IOW(MSMFB_IOCTL_MAGIC, 154, \
@@ -74,12 +69,11 @@
 #define MSMFB_WRITEBACK_TERMINATE _IO(MSMFB_IOCTL_MAGIC, 155)
 #define MSMFB_MDP_PP _IOWR(MSMFB_IOCTL_MAGIC, 156, struct msmfb_mdp_pp)
 
-/* HTC: Define custom ioctl started from 200 */
-#define MSMFB_OVERLAY_CHANGE_ZORDER_VG_PIPES    _IOW(MSMFB_IOCTL_MAGIC, 200, unsigned int)
-#define MSMFB_GET_GAMMA_CURVY _IOWR(MSMFB_IOCTL_MAGIC, 201, struct gamma_curvy)
 #define MSMFB_OVERLAY_VSYNC_CTRL  _IOW(MSMFB_IOCTL_MAGIC, 160, unsigned int)
 #define MSMFB_VSYNC_CTRL  _IOW(MSMFB_IOCTL_MAGIC, 161, unsigned int)
 #define MSMFB_METADATA_SET  _IOW(MSMFB_IOCTL_MAGIC, 162, struct msmfb_metadata)
+#define MSMFB_OVERLAY_COMMIT      _IOW(MSMFB_IOCTL_MAGIC, 163, unsigned int)
+
 #define FB_TYPE_3D_PANEL 0x10101010
 #define MDP_IMGTYPE2_START 0x10000
 #define MSMFB_DRIVER_VERSION	0xF9E8D701
@@ -87,8 +81,6 @@
 enum {
 	NOTIFY_UPDATE_START,
 	NOTIFY_UPDATE_STOP,
-	NOTIFY_TERMINATE_BLOCKING,
-	NOTIFY_NUM,
 };
 
 enum {
@@ -102,6 +94,8 @@ enum {
 	MDP_YCRYCB_H2V1,  /* YCrYCb interleave */
 	MDP_Y_CRCB_H2V1,  /* Y and CrCb, pseduo planer w/ Cr is in MSB */
 	MDP_Y_CBCR_H2V1,   /* Y and CrCb, pseduo planer w/ Cr is in MSB */
+	MDP_Y_CRCB_H1V2,
+	MDP_Y_CBCR_H1V2,
 	MDP_RGBA_8888,    /* ARGB 888 */
 	MDP_BGRA_8888,	  /* ABGR 888 */
 	MDP_RGBX_8888,	  /* RGBX 888 */
@@ -161,10 +155,6 @@ enum {
 #define MDP_SOURCE_ROTATED_90		0x00100000
 #define MDP_DPP_HSIC			0x00080000
 #define MDP_BACKEND_COMPOSITION		0x00040000
-#define MDP_BORDERFILL_SUPPORTED	0x00010000
-#define MDP_SECURE_OVERLAY_SESSION      0x00008000
-#define MDP_MEMORY_ID_TYPE_FB		0x00001000
-#define MDP_DPP_HSIC			0x00080000
 #define MDP_BORDERFILL_SUPPORTED	0x00010000
 #define MDP_SECURE_OVERLAY_SESSION      0x00008000
 #define MDP_MEMORY_ID_TYPE_FB		0x00001000
@@ -412,13 +402,15 @@ struct mdp_csc_cfg_data {
 	struct mdp_csc_cfg csc_data;
 };
 
+#define MDP_PP_OPS_READ 0x2
+#define MDP_PP_OPS_WRITE 0x4
+
 enum {
 	mdp_lut_igc,
 	mdp_lut_pgc,
 	mdp_lut_hist,
 	mdp_lut_max,
 };
-
 
 struct mdp_igc_lut_data {
 	uint32_t block;
@@ -466,11 +458,21 @@ struct mdp_bl_scale_data {
 	uint32_t scale;
 };
 
+struct mdp_qseed_cfg_data {
+	uint32_t block;
+	uint32_t table_num;
+	uint32_t ops;
+	uint32_t len;
+	uint32_t *data;
+};
+
+
 enum {
 	mdp_op_pcc_cfg,
 	mdp_op_csc_cfg,
 	mdp_op_lut_cfg,
 	mdp_bl_scale_cfg,
+	mdp_op_qseed_cfg,
 	mdp_op_max,
 };
 
@@ -481,6 +483,7 @@ struct msmfb_mdp_pp {
 		struct mdp_csc_cfg_data csc_cfg_data;
 		struct mdp_lut_cfg_data lut_cfg_data;
 		struct mdp_bl_scale_data bl_scale_data;
+		struct mdp_qseed_cfg_data qseed_cfg_data;
 	} data;
 };
 
@@ -535,18 +538,12 @@ int get_fb_phys_info(unsigned long *start, unsigned long *len, int fb_num,
 struct fb_info *msm_fb_get_writeback_fb(void);
 int msm_fb_writeback_init(struct fb_info *info);
 int msm_fb_writeback_start(struct fb_info *info);
-int msm_fb_writeback_stop(struct fb_info *info);
-
-int msm_fb_writeback_register_buffer(struct fb_info *info,
-		struct msmfb_writeback_data *data);
 int msm_fb_writeback_queue_buffer(struct fb_info *info,
 		struct msmfb_data *data);
 int msm_fb_writeback_dequeue_buffer(struct fb_info *info,
 		struct msmfb_data *data);
 int msm_fb_writeback_stop(struct fb_info *info);
 int msm_fb_writeback_terminate(struct fb_info *info);
-int msm_fb_writeback_unregister_buffer(struct fb_info *info,
-		struct msmfb_writeback_data *data);
 #endif
 
 #endif /*_MSM_MDP_H_*/

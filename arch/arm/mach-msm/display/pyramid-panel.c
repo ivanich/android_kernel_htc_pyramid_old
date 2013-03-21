@@ -29,7 +29,9 @@
 #include <mach/msm_iomap.h>
 #include <mach/panel_id.h>
 #include <mach/msm_bus_board.h>
+#include <mach/msm_memtypes.h>
 #include <mach/debug_display.h>
+#include <linux/ion.h>
 
 #include "../devices.h"
 #include "../board-pyramid.h"
@@ -38,8 +40,6 @@
 #if defined (CONFIG_FB_MSM_MDP_ABL)
 #include <linux/fb.h>
 #endif
-
-void mdp_color_enhancement(const struct mdp_reg *reg_seq, int size);
 
 static struct regulator *l1_3v;
 static struct regulator *lvs1_1v8;
@@ -194,170 +194,7 @@ fail:
 	}
 }
 
-/*
-TODO:
-1. remove unused LCDC stuff.
-*/
-static uint32_t lcd_panel_gpios[] = {
-	GPIO_CFG(0,  1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_pclk */
-	GPIO_CFG(1,  1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_hsync*/
-	GPIO_CFG(2,  1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_vsync*/
-	GPIO_CFG(3,  1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_den */
-	GPIO_CFG(4,  1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_red7 */
-	GPIO_CFG(5,  1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_red6 */
-	GPIO_CFG(6,  1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_red5 */
-	GPIO_CFG(7,  1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_red4 */
-	GPIO_CFG(8,  1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_red3 */
-	GPIO_CFG(9,  1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_red2 */
-	GPIO_CFG(10, 1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_red1 */
-	GPIO_CFG(11, 1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_red0 */
-	GPIO_CFG(12, 1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_grn7 */
-	GPIO_CFG(13, 1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_grn6 */
-	GPIO_CFG(14, 1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_grn5 */
-	GPIO_CFG(15, 1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_grn4 */
-	GPIO_CFG(16, 1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_grn3 */
-	GPIO_CFG(17, 1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_grn2 */
-	GPIO_CFG(18, 1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_grn1 */
-	GPIO_CFG(19, 1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_grn0 */
-	GPIO_CFG(20, 1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_blu7 */
-	GPIO_CFG(21, 1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_blu6 */
-	GPIO_CFG(22, 1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_blu5 */
-	GPIO_CFG(23, 1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_blu4 */
-	GPIO_CFG(24, 1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_blu3 */
-	GPIO_CFG(25, 1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_blu2 */
-	GPIO_CFG(26, 1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_blu1 */
-	GPIO_CFG(27, 1, GPIO_CFG_OUTPUT,  GPIO_CFG_NO_PULL, GPIO_CFG_16MA), /* lcdc_blu0 */
-};
-
-static void lcdc_samsung_panel_power(int on)
-{
-	int n;
-
-	/*TODO if on = 0 free the gpio's */
-	for (n = 0; n < ARRAY_SIZE(lcd_panel_gpios); ++n)
-		gpio_tlmm_config(lcd_panel_gpios[n], 0);
-}
-
-static int lcdc_panel_power(int on)
-{
-	int flag_on = !!on;
-	static int lcdc_power_save_on;
-
-	if (lcdc_power_save_on == flag_on)
-		return 0;
-
-	lcdc_power_save_on = flag_on;
-
-	lcdc_samsung_panel_power(on);
-
-	return 0;
-}
-
 #ifdef CONFIG_MSM_BUS_SCALING
-static struct msm_bus_vectors rotator_init_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_SMI,
-		.ab = 0,
-		.ib = 0,
-	},
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab = 0,
-		.ib = 0,
-		},
-	};
-
-static struct msm_bus_vectors rotator_ui_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_SMI,
-		.ab  = 0,
-		.ib  = 0,
-	},
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = (1024 * 600 * 4 * 2 * 60),
-		.ib  = (1024 * 600 * 4 * 2 * 60 * 1.5),
-	},
-};
-
-static struct msm_bus_vectors rotator_vga_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_SMI,
-		.ab  = (640 * 480 * 2 * 2 * 30),
-		.ib  = (640 * 480 * 2 * 2 * 30 * 1.5),
-	},
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = (640 * 480 * 2 * 2 * 30),
-		.ib  = (640 * 480 * 2 * 2 * 30 * 1.5),
-	},
-};
-
-static struct msm_bus_vectors rotator_720p_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_SMI,
-		.ab  = (1280 * 736 * 2 * 2 * 30),
-		.ib  = (1280 * 736 * 2 * 2 * 30 * 1.5),
-	},
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = (1280 * 736 * 2 * 2 * 30),
-		.ib  = (1280 * 736 * 2 * 2 * 30 * 1.5),
-	},
-};
-
-static struct msm_bus_vectors rotator_1080p_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_SMI,
-		.ab  = (1920 * 1088 * 2 * 2 * 30),
-		.ib  = (1920 * 1088 * 2 * 2 * 30 * 1.5),
-	},
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = (1920 * 1088 * 2 * 2 * 30),
-		.ib  = (1920 * 1088 * 2 * 2 * 30 * 1.5),
-	},
-};
-
-static struct msm_bus_paths rotator_bus_scale_usecases[] = {
-	{
-		ARRAY_SIZE(rotator_init_vectors),
-		rotator_init_vectors,
-	},
-	{
-		ARRAY_SIZE(rotator_ui_vectors),
-		rotator_ui_vectors,
-	},
-	{
-		ARRAY_SIZE(rotator_vga_vectors),
-		rotator_vga_vectors,
-	},
-	{
-		ARRAY_SIZE(rotator_720p_vectors),
-		rotator_720p_vectors,
-	},
-	{
-		ARRAY_SIZE(rotator_1080p_vectors),
-		rotator_1080p_vectors,
-	},
-};
-
-struct msm_bus_scale_pdata rotator_bus_scale_pdata = {
-	rotator_bus_scale_usecases,
-	ARRAY_SIZE(rotator_bus_scale_usecases),
-	.name = "rotator",
-};
-
 static struct msm_bus_vectors mdp_init_vectors[] = {
 	/* For now, 0th array entry is reserved.
 	 * Please leave 0 as is and don't use it
@@ -566,124 +403,14 @@ static int mipi_panel_power(int on)
 	return 0;
 }
 
-static struct lcdc_platform_data lcdc_pdata = {
-	.lcdc_power_save   = lcdc_panel_power,
-};
-
-/* The solution provide by Novatek to fixup the problem of blank screen while
- * performing static electric strick. Only AUO panel need this function.
- */
-int pyd_esd_fixup(uint32_t mfd_data)
-{
-	/* do two read_scan_line consecutively to avoid flicking */
-	if (mipi_novatek_read_scan_line(mfd_data) == 0xf7ff) {
-		hr_msleep(1);
-		if (mipi_novatek_read_scan_line(mfd_data) == 0xf7ff) {
-			pr_info("%s\n", __func__);
-			mipi_novatek_restart_vcounter(mfd_data);
-		}
-	}
-
-	return 0;
-}
-
 static struct mipi_dsi_platform_data mipi_pdata = {
 	.vsync_gpio		= 28,
 	.dsi_power_save		= mipi_panel_power,
 };
 
-static struct platform_device mipi_dsi_video_sharp_wvga_panel_device = {
-	.name = "dsi_video_sharp_wvga",
-	.id = 0,
-};
-
-#define GPIO_BACKLIGHT_PWM0 0
-#define GPIO_BACKLIGHT_PWM1 1
-
-static int pmic_backlight_gpio[2]
-= { GPIO_BACKLIGHT_PWM0, GPIO_BACKLIGHT_PWM1 };
-static struct msm_panel_common_pdata lcdc_samsung_panel_data = {
-	.gpio_num = pmic_backlight_gpio, /* two LPG CHANNELS for backlight */
-};
-
-static struct platform_device lcdc_samsung_panel_device = {
-	.name = "lcdc_samsung_wsvga",
-	.id = 0,
-	.dev = {
-		.platform_data = &lcdc_samsung_panel_data,
-	}
-};
-
-#define BRI_SETTING_MIN                 30
-#define BRI_SETTING_DEF                 143
-#define BRI_SETTING_MAX                 255
-
-#define SHARP_PWM_MIN                   9	/* 3.5% of max pwm */
-#define SHARP_PWM_DEFAULT               69	/* 27% of max pwm  */
-#define SHARP_PWM_MAX                   194	/* 76% of max pwm */
-
-static unsigned char pyd_shp_shrink_pwm(int br)
-{
-	unsigned char shrink_br = BRI_SETTING_MAX;
-
-	if (br <= 0) {
-		shrink_br = 0;
-	} else if (br > 0 && br <= BRI_SETTING_MIN) {
-		shrink_br = SHARP_PWM_MIN;
-	} else if (br > BRI_SETTING_MIN && br <= BRI_SETTING_DEF) {
-		shrink_br = (SHARP_PWM_MIN + (br - BRI_SETTING_MIN) *
-				(SHARP_PWM_DEFAULT - SHARP_PWM_MIN) /
-				(BRI_SETTING_DEF - BRI_SETTING_MIN));
-	} else if (br > BRI_SETTING_DEF && br <= BRI_SETTING_MAX) {
-		shrink_br = (SHARP_PWM_DEFAULT + (br - BRI_SETTING_DEF) *
-				(SHARP_PWM_MAX - SHARP_PWM_DEFAULT) /
-				(BRI_SETTING_MAX - BRI_SETTING_DEF));
-	} else if (br > BRI_SETTING_MAX)
-		shrink_br = SHARP_PWM_MAX;
-	/* TODO: remove log later */
-	PR_DISP_INFO("SHP: brightness orig=%d, transformed=%d\n", br, shrink_br);
-
-	return shrink_br;
-}
-
-#define AUO_PWM_MIN                     9	/* 3.5% of max pwm */
-#define AUO_PWM_DEFAULT                 87	/* 34% of max pwm  */
-#define AUO_PWM_MAX                     255	/* 100% of max pwm  */
-
-static unsigned char pyd_auo_shrink_pwm(int br)
-{
-	unsigned char shrink_br = 0;
-
-	if (br <= 0) {
-		shrink_br = 0;
-	} else if (br > 0 && br <= BRI_SETTING_MIN) {
-		shrink_br = AUO_PWM_MIN;
-	} else if (br > BRI_SETTING_MIN && br <= BRI_SETTING_DEF) {
-		shrink_br = (AUO_PWM_MIN + (br - BRI_SETTING_MIN) *
-				(AUO_PWM_DEFAULT - AUO_PWM_MIN) /
-				(BRI_SETTING_DEF - BRI_SETTING_MIN));
-	} else if (br > BRI_SETTING_DEF && br <= BRI_SETTING_MAX) {
-		shrink_br = (AUO_PWM_DEFAULT + (br - BRI_SETTING_DEF) *
-				(AUO_PWM_MAX - AUO_PWM_DEFAULT) /
-				(BRI_SETTING_MAX - BRI_SETTING_DEF));
-	} else if (br > BRI_SETTING_MAX)
-		shrink_br = AUO_PWM_MAX;
-	/* TODO: remove log later */
-	PR_DISP_INFO("AUO: brightness orig=%d, transformed=%d\n", br, shrink_br);
-
-	return shrink_br;
-}
-
-static struct msm_panel_common_pdata mipi_novatek_panel_data = {
-	.shrink_pwm = NULL,
-};
-
 static struct platform_device mipi_dsi_cmd_sharp_qhd_panel_device = {
 	.name = "mipi_novatek",
 	.id = 0,
-	.dev = {
-		.platform_data = &mipi_novatek_panel_data,
-	}
 };
 
 static int msm_fb_detect_panel(const char *name)
@@ -702,6 +429,8 @@ static int msm_fb_detect_panel(const char *name)
 
 static struct msm_fb_platform_data msm_fb_pdata = {
 	.detect_client = msm_fb_detect_panel,
+	.prim_panel_name = "mipi_cmd_novatek_qhd",
+	.ext_panel_name = "",
 	.blt_mode = 1,
 	.width = 53,
 	.height = 95,
@@ -1265,23 +994,6 @@ struct mdp_reg pyd_sharp_gamma[] = {
 	{0x90070, 0x1F, 0x0},
 };
 
-int pyd_mdp_color_enhance(void)
-{
-	mdp_color_enhancement(pyd_color_v11, ARRAY_SIZE(pyd_color_v11));
-
-	return 0;
-}
-
-int pyd_mdp_gamma(void)
-{
-	if (panel_type == PANEL_ID_PYD_SHARP)
-		mdp_color_enhancement(pyd_sharp_gamma, ARRAY_SIZE(pyd_sharp_gamma));
-	else
-		mdp_color_enhancement(pyd_auo_gamma, ARRAY_SIZE(pyd_auo_gamma));
-
-	return 0;
-}
-
 #if defined (CONFIG_FB_MSM_MDP_ABL)
 static struct gamma_curvy gamma_tbl = {
 	.gamma_len = 33,
@@ -1300,14 +1012,17 @@ static struct gamma_curvy gamma_tbl = {
 
 static struct msm_panel_common_pdata mdp_pdata = {
 	.gpio = 28,
-	.mdp_core_clk_rate = 200000000,
-	.mdp_core_clk_table = mdp_core_clk_rate_table,
-	.num_mdp_clk = ARRAY_SIZE(mdp_core_clk_rate_table),
+	.mdp_max_clk = 200000000,
 #ifdef CONFIG_MSM_BUS_SCALING
 	.mdp_bus_scale_table = &mdp_bus_scale_pdata,
 #endif
-	.mdp_color_enhance = pyd_mdp_color_enhance,
-	.mdp_gamma = pyd_mdp_gamma,
+	.mdp_rev = MDP_REV_41,
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+	.mem_hid = BIT(ION_CP_WB_HEAP_ID),
+#else
+	.mem_hid = MEMTYPE_EBI1,
+#endif
+	/* HTC additions */
 #if defined (CONFIG_FB_MSM_MDP_ABL)
 	.abl_gamma_tbl = &gamma_tbl,
 #endif
@@ -1318,7 +1033,6 @@ static void __init msm_fb_add_devices(void)
 	printk(KERN_INFO "panel ID= 0x%x\n", panel_type);
 	msm_fb_register_device("mdp", &mdp_pdata);
 
-	msm_fb_register_device("lcdc", &lcdc_pdata);
 	if (panel_type != PANEL_ID_NONE)
 		msm_fb_register_device("mipi_dsi", &mipi_pdata);
 #ifdef CONFIG_MSM_BUS_SCALING
@@ -1336,10 +1050,6 @@ int __init pyd_init_panel(struct resource *res, size_t size)
 	int ret;
 
 	PR_DISP_INFO("%s: res=%p, size=%d\n", __func__, res, size);
-	if (panel_type == PANEL_ID_PYD_SHARP)
-		mipi_novatek_panel_data.shrink_pwm = pyd_shp_shrink_pwm;
-	else
-		mipi_novatek_panel_data.shrink_pwm = pyd_auo_shrink_pwm;
 
 	if (panel_type == PANEL_ID_PYD_SHARP)
 		mdp_pdata.color_enhancment_tbl = pyd_sharp_gamma;
@@ -1349,15 +1059,10 @@ int __init pyd_init_panel(struct resource *res, size_t size)
 	msm_fb_device.resource = res;
 	msm_fb_device.num_resources = size;
 
-#if 1
-	/* Cancel the fixup temporally due to it's cause flicking problem. */
-	if (panel_type == PANEL_ID_PYD_AUO_NT)
-		mipi_pdata.esd_fixup = pyd_esd_fixup;
-#endif
+//	mdp_pdata.ov0_wb_size = MSM_FB_OVERLAY0_WRITEBACK_SIZE;
+//	mdp_pdata.ov1_wb_size = MSM_FB_OVERLAY1_WRITEBACK_SIZE;
 
 	ret = platform_device_register(&msm_fb_device);
-	ret = platform_device_register(&lcdc_samsung_panel_device);
-	ret = platform_device_register(&mipi_dsi_video_sharp_wvga_panel_device);
 	ret = platform_device_register(&mipi_dsi_cmd_sharp_qhd_panel_device);
 
 	msm_fb_add_devices();
