@@ -126,7 +126,7 @@ static void allocate_co_memory(struct ion_platform_heap *heap,
 		if (shared_heap) {
 			struct ion_cp_heap_pdata *cp_data =
 			   (struct ion_cp_heap_pdata *) shared_heap->extra_data;
-			if (cp_data->fixed_position == FIXED_MIDDLE) {
+			if (cp_data->mem_is_fmem && cp_data->fixed_position == FIXED_MIDDLE) {
 				const struct fmem_data *fmem_info =
 					fmem_get_info();
 
@@ -136,9 +136,11 @@ static void allocate_co_memory(struct ion_platform_heap *heap,
 				}
 
 				cp_data->virt_addr = fmem_info->virt;
-				cp_data->secure_base = heap->base;
-				cp_data->secure_size =
+				if (!cp_data->secure_base) {
+					cp_data->secure_base = heap->base;
+					cp_data->secure_size =
 						heap->size + shared_heap->size;
+				}
 			} else if (!heap->base) {
 				ion_set_base_address(heap, shared_heap,
 					co_heap_data, cp_data);
@@ -299,3 +301,4 @@ static void __exit msm_ion_exit(void)
 
 subsys_initcall(msm_ion_init);
 module_exit(msm_ion_exit);
+
