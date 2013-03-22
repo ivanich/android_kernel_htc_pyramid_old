@@ -1,4 +1,4 @@
-/* Copyright (c) 2010-2011, Code Aurora Forum. All rights reserved.
+/* Copyright (c) 2010-2012, Code Aurora Forum. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -17,15 +17,7 @@
 #include <linux/clk.h>
 #include <mach/socinfo.h>
 
-/* Sharability attributes of MSM IOMMU mappings */
-#define MSM_IOMMU_ATTR_NON_SH		0x0
-#define MSM_IOMMU_ATTR_SH		0x4
-
-/* Cacheability attributes of MSM IOMMU mappings */
-#define MSM_IOMMU_ATTR_NONCACHED	0x0
-#define MSM_IOMMU_ATTR_CACHED_WB_WA	0x1
-#define MSM_IOMMU_ATTR_CACHED_WB_NWA	0x2
-#define MSM_IOMMU_ATTR_CACHED_WT	0x3
+extern pgprot_t     pgprot_kernel;
 
 /* Domain attributes */
 #define MSM_IOMMU_DOMAIN_PT_CACHEABLE	0x1
@@ -49,6 +41,7 @@
 struct msm_iommu_dev {
 	const char *name;
 	int ncb;
+	int ttbr_split;
 };
 
 /**
@@ -80,8 +73,8 @@ struct msm_iommu_ctx_dev {
  */
 struct msm_iommu_drvdata {
 	void __iomem *base;
-	int irq;
 	int ncb;
+	int ttbr_split;
 	struct clk *clk;
 	struct clk *pclk;
 	const char *name;
@@ -101,6 +94,8 @@ struct msm_iommu_ctx_drvdata {
 	int num;
 	struct platform_device *pdev;
 	struct list_head attached_elm;
+	struct iommu_domain *attached_domain;
+	const char *name;
 };
 
 /*
