@@ -208,6 +208,11 @@ int mdp4_dtv_pipe_commit(int cndx, int wait)
 	 * overlay_unset
 	 */
 
+	if (vp->update_cnt == 0) {
+		mutex_unlock(&vctrl->update_lock);
+		return 0;
+	}
+
 	vctrl->update_ndx++;
 	vctrl->update_ndx &= 0x01;
 	vp->update_cnt = 0;	/* reset */
@@ -587,14 +592,6 @@ int mdp4_dtv_on(struct platform_device *pdev)
 	if (mfd->key != MFD_KEY)
 		return -EINVAL;
 
-#if defined(CONFIG_VIDEO_MHL_V1) || defined(CONFIG_VIDEO_MHL_V2) || \
-		defined(CONFIG_VIDEO_MHL_TAB_V2)
-	if (!hdmi_msm_state->hpd_on_offline) {
-		pr_info("hdmi_online is not\n");
-		return -ENODEV;
-	}
-#endif
-
 	vctrl->dev = mfd->fbi->dev;
 	vctrl->vsync_irq_enabled = 0;
 
@@ -818,8 +815,6 @@ static void mdp4_overlay_dtv_alloc_pipe(struct msm_fb_data_type *mfd,
 
 	mdp4_overlay_mdp_pipe_req(pipe, mfd);
 	mdp4_calc_blt_mdp_bw(mfd, pipe);
-	mdp4_overlay_mdp_perf_req(mfd);
-	mdp4_overlay_mdp_perf_upd(mfd, 1);
 
 	ret = mdp4_overlay_format2pipe(pipe);
 	if (ret < 0)
@@ -1001,14 +996,16 @@ void mdp4_dtv_set_black_screen()
 	rgb_base = MDP_BASE;
 	rgb_base += (MDP4_RGB_OFF * (pipe_num + 2));
 
-	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
-
-	/* RGB Constant Color */
+	/*
+	* RGB Constant Color
+	*/
 	MDP_OUTP(rgb_base + 0x1008, color);
-
-	/* MDP_RGB_SRC_FORMAT */
+	/*
+	* MDP_RGB_SRC_FORMAT
+	*/
 	temp_src_format = inpdw(rgb_base + 0x0050);
 	MDP_OUTP(rgb_base + 0x0050, temp_src_format | BIT(22));
+	mdp4_overlay_reg_flush(vctrl->base_pipe, 1);
 
 	if (commit) {
 		mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_OFF, FALSE);
@@ -1132,8 +1129,8 @@ void mdp4_dtv_overlay(struct msm_fb_data_type *mfd)
 		mdp4_dtv_pipe_queue(0, pipe);
 	}
 
-	if (mdp4_dtv_pipe_commit(0, 0))
-		mdp4_dtv_wait4dmae(0);
-
+	mdp4_overlay_mdp_perf_upd(mfd, 1);
+	mdp4_dtv_pipe_commit(0, 0);
+	mdp4_overlay_mdp_perf_upd(mfd, 0);
 	mutex_unlock(&mfd->dma->ov_mutex);
 }

@@ -43,8 +43,13 @@ static boolean tlmm_settings = FALSE;
 static int mipi_dsi_probe(struct platform_device *pdev);
 static int mipi_dsi_remove(struct platform_device *pdev);
 
-static int mipi_dsi_off(struct platform_device *pdev);
-static int mipi_dsi_on(struct platform_device *pdev);
+ int mipi_dsi_off(struct platform_device *pdev);
+ int mipi_dsi_on(struct platform_device *pdev);
+
+#if defined(CONFIG_USA_MODEL_SGH_I717) || defined (CONFIG_JPN_MODEL_SC_05D)
+static int mipi_dsi_shutdown(struct platform_device *pdev);
+#endif
+
 
 static struct platform_device *pdev_list[MSM_FB_MAX_DEV_LIST];
 static int pdev_list_cnt;
@@ -55,7 +60,11 @@ static int vsync_gpio = -1;
 static struct platform_driver mipi_dsi_driver = {
 	.probe = mipi_dsi_probe,
 	.remove = mipi_dsi_remove,
+#if defined(CONFIG_USA_MODEL_SGH_I717) || defined (CONFIG_JPN_MODEL_SC_05D)
+	.shutdown = mipi_dsi_shutdown,
+#else
 	.shutdown = NULL,
+#endif
 	.driver = {
 		   .name = "mipi_dsi",
 		   },
@@ -63,13 +72,11 @@ static struct platform_driver mipi_dsi_driver = {
 
 struct device dsi_dev;
 
-static int mipi_dsi_off(struct platform_device *pdev)
+int mipi_dsi_off(struct platform_device *pdev)
 {
 	int ret = 0;
 	struct msm_fb_data_type *mfd;
 	struct msm_panel_info *pinfo;
-
-	pr_debug("Start of %s....:\n", __func__);
 
 	pr_debug("%s+:\n", __func__);
 
@@ -90,6 +97,14 @@ static int mipi_dsi_off(struct platform_device *pdev)
 		mipi_dsi_cmd_mdp_busy();
 	}
 
+	/* make sure dsi clk is on so that
+	 * dcs commands can be sent
+	 */
+	mipi_dsi_clk_cfg(1);
+
+	/* make sure dsi_cmd_mdp is idle */
+	mipi_dsi_cmd_mdp_busy();
+
 	/*
 	 * Desctiption: change to DSI_CMD_MODE since it needed to
 	 * tx DCS dsiplay off comamnd to panel
@@ -107,6 +122,12 @@ static int mipi_dsi_off(struct platform_device *pdev)
 	}
 
 	ret = panel_next_off(pdev);
+
+#if defined(CONFIG_FB_MSM_MIPI_S6E8AA0_HD720_PANEL) || \
+	defined(CONFIG_FB_MSM_MIPI_S6E8AA0_WXGA_Q1_PANEL)
+
+	MIPI_OUTP(MIPI_DSI_BASE + 0xA8, 0x00000000); // for LCD-on when wakeup
+#endif
 
 	spin_lock_bh(&dsi_clk_lock);
 
@@ -129,12 +150,11 @@ static int mipi_dsi_off(struct platform_device *pdev)
 	else
 		up(&mfd->dma->mutex);
 
-	pr_debug("End of %s ....:\n", __func__);
-
 	return ret;
 }
 
-static int mipi_dsi_on(struct platform_device *pdev)
+extern struct mdp4_overlay_perf perf_current;
+int mipi_dsi_on(struct platform_device *pdev)
 {
 	int ret = 0;
 	u32 clk_rate;
@@ -320,11 +340,24 @@ static int mipi_dsi_on(struct platform_device *pdev)
 	else
 		up(&mfd->dma->mutex);
 
-	pr_debug("End of %s....:\n", __func__);
-
 	return ret;
 }
 
+#if defined(CONFIG_USA_MODEL_SGH_I717) || defined (CONFIG_JPN_MODEL_SC_05D)
+static int mipi_dsi_shutdown(struct platform_device *pdev)
+{
+	int ret = 0;
+	printk("%s:+\n", __func__);
+
+	msleep(200);
+	if (mipi_dsi_pdata && mipi_dsi_pdata->dsi_power_save)
+		mipi_dsi_pdata->dsi_power_save(0x10);
+
+	printk("%s:-\n", __func__);
+
+	return ret;
+}
+#endif
 
 static int mipi_dsi_resource_initialized;
 
@@ -580,6 +613,26 @@ static int mipi_dsi_probe(struct platform_device *pdev)
 
 	pdev_list[pdev_list_cnt++] = pdev;
 
+#if 1 // Debug Information
+	printk(KERN_ERR "mipi_dsi_probe: H.Period=%d, width=%d, BPorch=%d, xrex=%d,FPorch=%d\n",
+			h_period,
+			(mfd->panel_info.lcdc.h_pulse_width),
+			(mfd->panel_info.lcdc.h_back_porch),
+			(mfd->panel_info.xres),
+			(mfd->panel_info.lcdc.h_front_porch)	);
+	printk(KERN_ERR "mipi_dsi_probe: V.Period=%d, width=%d, BPorch=%d, xrex=%d,FPorch=%d\n",
+			v_period,
+			(mfd->panel_info.lcdc.v_pulse_width),
+			(mfd->panel_info.lcdc.v_back_porch),
+			(mfd->panel_info.yres),
+			(mfd->panel_info.lcdc.v_front_porch)	);
+	printk(KERN_ERR "mipi_dsi_probe: mipi->frame_rate = %d\n", mipi->frame_rate );	
+	printk(KERN_ERR "mipi_dsi_probe: Lanes = %d\n", lanes );	
+	printk(KERN_ERR "mipi_dsi_probe: pll_divider_config.clk_rate = %u\n", pll_divider_config.clk_rate );
+	printk(KERN_ERR "mipi_dsi_probe: dsi_pclk_rate = %u\n", dsi_pclk_rate );
+	printk(KERN_ERR "mipi_dsi_probe: mipi->dsi_pclk_rate = %u\n", mipi->dsi_pclk_rate );
+#endif 
+
 return 0;
 
 mipi_dsi_probe_err:
@@ -619,4 +672,6 @@ static int __init mipi_dsi_driver_init(void)
 	return ret;
 }
 
+EXPORT_SYMBOL(mipi_dsi_on);
+EXPORT_SYMBOL(mipi_dsi_off);
 module_init(mipi_dsi_driver_init);

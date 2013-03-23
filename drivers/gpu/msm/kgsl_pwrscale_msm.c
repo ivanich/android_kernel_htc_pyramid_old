@@ -98,7 +98,7 @@ static void msm_busy(struct kgsl_device *device,
 }
 
 static void msm_idle(struct kgsl_device *device,
-		struct kgsl_pwrscale *pwrscale)
+		struct kgsl_pwrscale *pwrscale, unsigned int ignore_idle)
 {
 	struct msm_priv *priv = pwrscale->priv;
 

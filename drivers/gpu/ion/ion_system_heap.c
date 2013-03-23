@@ -210,7 +210,8 @@ int ion_system_heap_cache_ops(struct ion_heap *heap, struct ion_buffer *buffer,
 	return 0;
 }
 
-static int ion_system_print_debug(struct ion_heap *heap, struct seq_file *s)
+static int ion_system_print_debug(struct ion_heap *heap, struct seq_file *s,
+				  const struct rb_root *unused)
 {
 	seq_printf(s, "total bytes currently allocated: %lx\n",
 			(unsigned long) atomic_read(&system_heap_allocated));
@@ -246,12 +247,13 @@ int ion_system_heap_map_iommu(struct ion_buffer *buffer,
 	data->mapped_size = iova_length;
 	extra = iova_length - buffer->size;
 
-	ret = msm_allocate_iova_address(domain_num, partition_num,
-						data->mapped_size, align,
-						&data->iova_addr);
+	data->iova_addr = msm_allocate_iova_address(domain_num, partition_num,
+						data->mapped_size, align);
 
-	if (ret)
+	if (!data->iova_addr) {
+		ret = -ENOMEM;
 		goto out;
+	}
 
 	domain = msm_get_iommu_domain(domain_num);
 
@@ -436,7 +438,8 @@ int ion_system_contig_heap_cache_ops(struct ion_heap *heap,
 }
 
 static int ion_system_contig_print_debug(struct ion_heap *heap,
-					 struct seq_file *s)
+					 struct seq_file *s,
+					 const struct rb_root *unused)
 {
 	seq_printf(s, "total bytes currently allocated: %lx\n",
 		(unsigned long) atomic_read(&system_contig_heap_allocated));
@@ -471,12 +474,13 @@ int ion_system_contig_heap_map_iommu(struct ion_buffer *buffer,
 	data->mapped_size = iova_length;
 	extra = iova_length - buffer->size;
 
-	ret = msm_allocate_iova_address(domain_num, partition_num,
-						data->mapped_size, align,
-						&data->iova_addr);
+	data->iova_addr = msm_allocate_iova_address(domain_num, partition_num,
+						data->mapped_size, align);
 
-	if (ret)
+	if (!data->iova_addr) {
+		ret = -ENOMEM;
 		goto out;
+	}
 
 	domain = msm_get_iommu_domain(domain_num);
 

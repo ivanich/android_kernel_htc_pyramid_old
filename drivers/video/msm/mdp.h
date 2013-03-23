@@ -42,11 +42,14 @@ extern uint32 mdp_hw_revision;
 extern ulong mdp4_display_intf;
 extern spinlock_t mdp_spin_lock;
 extern int mdp_rev;
-extern int mdp_iommu_split_domain;
 extern struct mdp_csc_cfg mdp_csc_convert[4];
 extern struct mdp_csc_cfg_data csc_cfg_matrix[];
 extern struct workqueue_struct *mdp_hist_wq;
 
+extern int mdp_lut_i;
+extern int mdp_lut_push;
+extern int mdp_lut_push_i;
+extern struct mutex mdp_lut_push_sem;
 extern uint32 mdp_intr_mask;
 
 #define MDP4_REVISION_V1		0
@@ -73,7 +76,6 @@ extern uint32 mdp_intr_mask;
 #define MDPOP_SHARPENING	BIT(11) /* enable sharpening */
 #define MDPOP_BLUR		BIT(12) /* enable blur */
 #define MDPOP_FG_PM_ALPHA       BIT(13)
-#define MDPOP_LAYER_IS_FG       BIT(14)
 #define MDP_ALLOC(x)  kmalloc(x, GFP_KERNEL)
 
 struct mdp_buf_type {
@@ -97,6 +99,7 @@ struct vsync {
 	struct device *dev;
 	struct work_struct vsync_work;
 	int vsync_irq_enabled;
+	struct completion vsync_wait;
 };
 
 extern struct vsync vsync_cntrl;
@@ -726,7 +729,7 @@ extern struct mdp_hist_mgmt *mdp_hist_mgmt_array[];
 #define MDP_DMA_P_LUT_C2_EN   BIT(2)
 #define MDP_DMA_P_LUT_POST    BIT(4)
 
-void mdp_hw_init(void);
+void mdp_hw_init(int splash);
 int mdp_ppp_pipe_wait(void);
 void mdp_pipe_kickoff(uint32 term, struct msm_fb_data_type *mfd);
 void mdp_clk_ctrl(int on);
@@ -776,7 +779,7 @@ void mdp_lcdc_update(struct msm_fb_data_type *mfd);
 int mdp_dsi_video_on(struct platform_device *pdev);
 int mdp_dsi_video_off(struct platform_device *pdev);
 void mdp_dsi_video_update(struct msm_fb_data_type *mfd);
-void mdp3_dsi_cmd_dma_busy_wait(struct msm_fb_data_type *mfd);
+void mdp3_dsi_cmd_dma_busy_wait(struct msm_fb_data_type *mfd)
 static inline int mdp4_dsi_cmd_off(struct platform_device *pdev)
 {
 	return 0;
@@ -811,14 +814,6 @@ static inline int mdp4_mddi_on(struct platform_device *pdev)
 }
 #endif
 
-
-#ifndef CONFIG_FB_MSM_MDDI
-static inline void mdp4_mddi_rdptr_init(int cndx)
-{
-	/* empty */
-}
-
-#endif
 
 void set_cont_splashScreen_status(int);
 
@@ -855,8 +850,6 @@ static inline int mdp_bus_scale_update_request(u64 ab,
 void mdp_dma_vsync_ctrl(int enable);
 void mdp_dma_video_vsync_ctrl(int enable);
 void mdp_dma_lcdc_vsync_ctrl(int enable);
-void mdp3_vsync_irq_enable(int intr, int term);
-void mdp3_vsync_irq_disable(int intr, int term);
 
 #ifdef MDP_HW_VSYNC
 void vsync_clk_prepare_enable(void);
@@ -901,10 +894,6 @@ static inline int mdp4_overlay_dsi_state_get(void)
 {
 	return 0;
 }
-static inline void mdp4_iommu_detach(void)
-{
-	/*empty */
-}
 #endif
 
 void mdp_vid_quant_set(void);
@@ -928,5 +917,4 @@ int mdp_ppp_v4l2_overlay_play(struct fb_info *info,
 void mdp_update_pm(struct msm_fb_data_type *mfd, ktime_t pre_vsync);
 
 u32 mdp_get_panel_framerate(struct msm_fb_data_type *mfd);
-
 #endif /* MDP_H */

@@ -633,18 +633,20 @@ void hdmi_msm_init_phy(int video_format)
 
 void hdmi_msm_powerdown_phy(void)
 {
-	/* Assert RESET PHY from controller */
-	HDMI_OUTP_ND(0x02D4, 0x4);
-	udelay(10);
-	/* De-assert RESET PHY from controller */
-	HDMI_OUTP_ND(0x02D4, 0x0);
-	/* Turn off Driver */
-	HDMI_OUTP_ND(0x0308, 0x1F);
-	udelay(10);
 	/* Disable PLL */
 	HDMI_OUTP_ND(0x030C, 0x00);
+
+#ifdef WORKAROUND_FOR_HDMI_CURRENT_LEAKAGE_FIX
+	HDMI_OUTP_ND(0x02D4, 0x4);	//Assert RESET PHY from controller
+	udelay(10);
+	HDMI_OUTP_ND(0x02D4, 0x0);	//De-assert RESET PHY from controller
+	HDMI_OUTP_ND(0x0308, 0x1F); //Turn off Driver
+	udelay(10);
+#endif
+
 	/* Power down PHY */
-	HDMI_OUTP_ND(0x0308, 0x7F); /*0b01111111*/
+	//HDMI_OUTP_ND(0x0308, 0x7F); /*0b01111111*/
+	HDMI_OUTP_ND(0x0308, 0xFF); /*0b11111111*/
 }
 
 void hdmi_frame_ctrl_cfg(const struct hdmi_disp_mode_timing_type *timing)

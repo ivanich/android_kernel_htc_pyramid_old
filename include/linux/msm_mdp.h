@@ -72,11 +72,11 @@
 #define MSMFB_OVERLAY_VSYNC_CTRL  _IOW(MSMFB_IOCTL_MAGIC, 160, unsigned int)
 #define MSMFB_VSYNC_CTRL  _IOW(MSMFB_IOCTL_MAGIC, 161, unsigned int)
 #define MSMFB_BUFFER_SYNC  _IOW(MSMFB_IOCTL_MAGIC, 162, struct mdp_buf_sync)
+#define MSMFB_METADATA_SET  _IOW(MSMFB_IOCTL_MAGIC, 163, struct msmfb_metadata)
 #define MSMFB_DISPLAY_COMMIT      _IOW(MSMFB_IOCTL_MAGIC, 164, \
 						struct mdp_display_commit)
 #define MSMFB_METADATA_GET  _IOW(MSMFB_IOCTL_MAGIC, 166, struct msmfb_metadata)
 
-#define MSMFB_METADATA_SET  _IOW(MSMFB_IOCTL_MAGIC, 163, struct msmfb_metadata)
 #define FB_TYPE_3D_PANEL 0x10101010
 #define MDP_IMGTYPE2_START 0x10000
 #define MSMFB_DRIVER_VERSION	0xF9E8D701
@@ -141,7 +141,6 @@ enum {
 #define MDP_DITHER 0x8
 #define MDP_BLUR 0x10
 #define MDP_BLEND_FG_PREMULT 0x20000
-#define MDP_IS_FG 0x40000
 #define MDP_DEINTERLACE 0x80000000
 #define MDP_SHARPENING  0x40000000
 #define MDP_NO_DMA_BARRIER_START	0x20000000
@@ -465,6 +464,7 @@ struct mdp_hist_lut_data {
 	uint32_t *data;
 };
 
+
 struct mdp_lut_cfg_data {
 	uint32_t lut_type;
 	union {
@@ -506,6 +506,16 @@ enum {
 	metadata_op_max
 };
 
+#define MDP_MAX_FENCE_FD	10
+#define MDP_BUF_SYNC_FLAG_WAIT	1
+
+struct mdp_buf_sync {
+	uint32_t flags;
+	uint32_t acq_fen_fd_cnt;
+	int *acq_fen_fd;
+	int *rel_fen_fd;
+};
+
 struct mdp_blend_cfg {
 	uint32_t is_premultiplied;
 };
@@ -518,17 +528,6 @@ struct msmfb_metadata {
 		uint32_t panel_frame_rate;
 	} data;
 };
-
-#define MDP_MAX_FENCE_FD	10
-#define MDP_BUF_SYNC_FLAG_WAIT	1
-
-struct mdp_buf_sync {
-	uint32_t flags;
-	uint32_t acq_fen_fd_cnt;
-	int *acq_fen_fd;
-	int *rel_fen_fd;
-};
-
 struct mdp_buf_fence {
 	uint32_t flags;
 	uint32_t acq_fen_fd_cnt;
